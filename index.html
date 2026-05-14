@@ -137,7 +137,7 @@
                 </div>
             </header>
 
-            <!-- Scrollable Content View -->
+            <!-- Scrollable Content View (แก้ไขเพิ่มระยะเว้นล่าง pb-24 เป็น pb-40) -->
             <main class="flex-1 overflow-y-auto p-4 md:p-8 pb-40 md:pb-8 w-full">
                 <div class="max-w-5xl mx-auto">
                     
@@ -178,13 +178,14 @@
                             <!-- Data Table -->
                             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                                 <div class="overflow-x-auto">
-                                    <table class="w-full text-left border-collapse min-w-[600px]">
+                                    <table class="w-full text-left border-collapse min-w-[700px]">
                                         <thead>
                                             <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wider">
-                                                <th class="p-4 font-bold w-1/4">รหัสถัง</th>
-                                                <th class="p-4 font-bold w-1/4">สถานะปัจจุบัน</th>
-                                                <th class="p-4 font-bold w-1/4">อัปเดตล่าสุด</th>
-                                                <th class="p-4 font-bold w-1/4 text-center">จำนวนวันคงค้าง</th>
+                                                <th class="p-4 font-bold w-1/5">รหัสถัง</th>
+                                                <th class="p-4 font-bold w-1/5">สถานะปัจจุบัน</th>
+                                                <th class="p-4 font-bold w-1/5 text-center">รอบใช้งาน</th>
+                                                <th class="p-4 font-bold w-1/5">อัปเดตล่าสุด</th>
+                                                <th class="p-4 font-bold w-1/5 text-center">จำนวนวันคงค้าง</th>
                                             </tr>
                                         </thead>
                                         <tbody id="stock-table-body" class="divide-y divide-gray-100">
@@ -356,16 +357,21 @@
                                     </div>
                                 </div>
 
-                                <!-- พรีวิวตัวอย่าง (ฝั่งขวา) -->
+                                <!-- พรีวิวตัวอย่าง (ฝั่งขวา) - แก้ไขให้ย่อตามขนาดหน้าจอ (Responsive Scale) -->
                                 <div class="lg:col-span-8 bg-gray-200 p-4 md:p-8 rounded-2xl flex items-center justify-center border border-gray-300 shadow-inner overflow-hidden">
+                                    
+                                    <!-- ตัวคลุมสำหรับจัดการสเกลภาพให้พอดีหน้าจอ -->
                                     <div id="scale-wrapper" class="relative w-full max-w-[794px]" style="aspect-ratio: 794/559;">
                                         <div id="preview-scaler" class="absolute top-0 left-0" style="transform-origin: top left; transition: transform 0.2s ease-out;">
+                                            <!-- Container หลักที่ขนาดเป๊ะกับ A5 (96dpi) เพื่อให้ Render PDF ออกมาคมกริบและไม่คลาดเคลื่อน -->
                                             <div id="label-preview-container" class="bg-white flex flex-col relative shrink-0" style="width: 794px; height: 559px; border: 12px solid black; font-family: Arial, Helvetica, sans-serif; box-sizing: border-box;">
                                                 
+                                                <!-- แถบด้านบน (สีและชื่อแบรนด์) -->
                                                 <div id="label-top-bg" class="flex items-center justify-center bg-[#ff0000]" style="height: 50%; border-bottom: 12px solid black; box-sizing: border-box; overflow: hidden; padding: 0 30px;">
                                                     <div id="label-product-name" style="font-size: 150px; font-weight: 900; color: white; letter-spacing: 2px; text-transform: uppercase; white-space: nowrap;">JSP</div>
                                                 </div>
 
+                                                <!-- แถบด้านล่าง (รหัสถัง, QR Code, วันที่) -->
                                                 <div class="flex relative" style="height: 50%; box-sizing: border-box;">
                                                     <div class="flex items-center justify-center" style="width: 70%; border-right: 12px solid black; box-sizing: border-box; overflow: hidden; padding: 0 30px;">
                                                         <div id="label-tank-id" style="font-size: 160px; font-weight: 900; color: black; letter-spacing: -4px; text-transform: uppercase; white-space: nowrap;">PK 001</div>
@@ -406,14 +412,13 @@
                                     </select>
                                     <i class="fa-solid fa-chevron-down absolute right-4 top-1/2 transform -translate-y-1/2 text-blue-800 pointer-events-none text-xs"></i>
                                 </div>
-                                <div class="flex flex-col md:flex-row gap-2 shrink-0">
-                                    <button onclick="exportToExcel()" class="w-full md:w-auto bg-green-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center">
-                                        <i class="fa-solid fa-file-excel mr-2"></i> ส่งออก Excel
-                                    </button>
-                                    <button id="btn-clear-all" onclick="confirmClearAllData()" class="hidden w-full md:w-auto bg-red-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-red-700 transition-colors shadow-sm flex items-center justify-center">
-                                        <i class="fa-solid fa-trash-can mr-2"></i> ล้างประวัติทั้งหมด
-                                    </button>
-                                </div>
+                                <button onclick="exportToExcel()" class="w-full md:w-auto bg-green-600 text-white px-5 py-3 rounded-xl font-bold hover:bg-green-700 transition-colors shadow-sm flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-file-excel mr-2"></i> ส่งออก Excel
+                                </button>
+                                <!-- New Delete All Button (Admin Only) -->
+                                <button id="btn-delete-all-history" onclick="confirmDeleteAllHistory()" style="display: none;" class="w-full md:w-auto bg-red-50 text-red-600 border border-red-200 px-5 py-3 rounded-xl font-bold hover:bg-red-100 transition-colors shadow-sm flex items-center justify-center shrink-0">
+                                    <i class="fa-solid fa-trash-can mr-2"></i> ล้างประวัติทั้งหมด
+                                </button>
                             </div>
 
                             <!-- Data Table -->
@@ -465,7 +470,7 @@
                         <i class="fa-solid fa-gear text-xl mb-1"></i>
                         <span class="text-[9px]">จัดการ</span>
                     </button>
-                    <!-- ป้าย Label มือถือ (Admin Only) -->
+                    <!-- ป้าย Label มือถือ -->
                     <button onclick="switchTab('label')" id="nav-mobile-label" class="nav-btn-mobile flex-1 py-3 text-center text-gray-400 font-bold flex flex-col items-center transition-colors">
                         <i class="fa-solid fa-tags text-xl mb-1"></i>
                         <span class="text-[9px]">สร้างเลเบล</span>
@@ -539,6 +544,12 @@
                     </div>
                 </div>
                 <input type="text" id="cond-note" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white bg-gray-50 text-sm transition-colors">
+                
+                <!-- เพิ่มช่องใส่ลิงก์ Google Drive -->
+                <div class="mt-4">
+                    <label class="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider"><i class="fa-brands fa-google-drive text-blue-500 mr-1"></i> แนบรูปจาก Google Drive (ตัวเลือก)</label>
+                    <input type="text" id="cond-drive-link" placeholder="วางลิงก์แชร์รูปภาพที่นี่..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white bg-blue-50/50 text-sm transition-colors">
+                </div>
             </div>
 
             <div class="flex gap-3">
@@ -678,7 +689,7 @@
         window.editingTankId = null;
         let html5QrCode = null;
         let pendingTankId = null;
-        let labelQrCodeObj = null; 
+        let labelQrCodeObj = null; // ตัวแปรสำหรับ QR Code ในหน้าสร้าง Label
         
         // Custom Auth State
         window.appUser = null; 
@@ -769,29 +780,25 @@
             const manageNavMobile = document.getElementById('nav-mobile-manage');
             const labelNavDesktop = document.getElementById('nav-desktop-label');
             const labelNavMobile = document.getElementById('nav-mobile-label');
+            const btnDeleteAllHistory = document.getElementById('btn-delete-all-history');
             
             // Scan action buttons
             const scanContainer = document.getElementById('scan-action-container');
             const btnReceive = document.getElementById('btn-action-receive');
             const btnPack = document.getElementById('btn-action-pack');
             const btnDispatch = document.getElementById('btn-action-dispatch');
-            
-            // ปุ่มล้างประวัติ
-            const btnClearAll = document.getElementById('btn-clear-all');
 
             if (window.appRole === 'admin') {
                 if(manageNavDesktop) manageNavDesktop.style.display = 'flex';
                 if(manageNavMobile) manageNavMobile.style.display = 'flex';
                 if(labelNavDesktop) labelNavDesktop.style.display = 'flex';
                 if(labelNavMobile) labelNavMobile.style.display = 'flex';
+                if(btnDeleteAllHistory) btnDeleteAllHistory.style.display = 'flex';
                 
                 scanContainer.className = 'grid grid-cols-3 gap-2 md:gap-4 mb-8';
                 btnReceive.style.display = 'block';
                 btnPack.style.display = 'block';
                 btnDispatch.style.display = 'block';
-                
-                // แสดงปุ่มล้างประวัติเฉพาะ Admin
-                if(btnClearAll) btnClearAll.classList.remove('hidden');
                 
                 setScanAction('receive');
             } else {
@@ -799,14 +806,12 @@
                 if(manageNavMobile) manageNavMobile.style.display = 'none';
                 if(labelNavDesktop) labelNavDesktop.style.display = 'none';
                 if(labelNavMobile) labelNavMobile.style.display = 'none';
+                if(btnDeleteAllHistory) btnDeleteAllHistory.style.display = 'none';
                 
                 scanContainer.className = 'grid grid-cols-1 gap-2 md:gap-4 mb-8 max-w-xs mx-auto';
                 btnReceive.style.display = 'none';
                 btnPack.style.display = 'none';
                 btnDispatch.style.display = 'none';
-                
-                // ซ่อนปุ่มล้างประวัติสำหรับ Role อื่น
-                if(btnClearAll) btnClearAll.classList.add('hidden');
 
                 if (window.appRole === 'rm') {
                     btnReceive.style.display = 'block';
@@ -1254,7 +1259,10 @@
                     <tr class="hover:bg-gray-50/80 transition-colors">
                         <td class="p-4 font-black text-gray-800 whitespace-nowrap text-sm">
                             ${tank.id}
-                            ${tank.customThresholds ? `<br><span class="text-[9px] text-blue-500 font-normal border border-blue-200 bg-blue-50 px-1 rounded mt-1 inline-block">ตั้งค่าเฉพาะ</span>` : ''}
+                            <div class="mt-1 flex flex-col items-start gap-1">
+                                <span class="text-[9px] text-purple-600 font-bold border border-purple-200 bg-purple-50 px-1.5 py-0.5 rounded flex items-center w-max"><i class="fa-solid fa-arrows-spin mr-1"></i> รอบใช้งาน: ${tank.cycleCount || 0}</span>
+                                ${tank.customThresholds ? `<span class="text-[9px] text-blue-500 font-normal border border-blue-200 bg-blue-50 px-1.5 py-0.5 rounded w-max">ตั้งค่าเฉพาะ</span>` : ''}
+                            </div>
                         </td>
                         <td class="p-4 whitespace-nowrap">
                             <span class="${badgeClass} border px-2.5 py-1 rounded-lg text-[10px] font-bold">${statusText}</span>
@@ -1265,16 +1273,9 @@
                             <div>${new Date(tank.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</div>
                         </td>
                         <td class="p-4 whitespace-nowrap text-center">
-                            <div class="flex items-center justify-center gap-2">
-                                <button class="bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors border border-gray-200 shadow-sm">
-                                    <i class="fa-solid fa-list mr-1"></i> ดูประวัติ
-                                </button>
-                                ${window.appRole === 'admin' ? `
-                                <button onclick="event.stopPropagation(); confirmDeleteSpecificTank('${tank.id}')" class="bg-white text-red-500 hover:bg-red-50 hover:text-red-700 w-8 h-8 rounded-lg text-xs font-bold transition-colors border border-red-100 shadow-sm flex items-center justify-center" title="ลบข้อมูลถังนี้">
-                                    <i class="fa-solid fa-trash-can"></i>
-                                </button>
-                                ` : ''}
-                            </div>
+                            <button onclick="openEditTankModal('${tank.id}', '${tank.status}', '${customThreshStr}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors border border-blue-100 shadow-sm">
+                                <i class="fa-solid fa-pen mr-1"></i> แก้ไขข้อมูล
+                            </button>
                         </td>
                     </tr>
                 `;
@@ -1514,6 +1515,22 @@
                 });
         };
 
+        // --- ระบบแปลงลิงก์ Google Drive ---
+        window.extractDriveImage = (url) => {
+            if (!url) return null;
+            let id = null;
+            const matchD = url.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            const matchId = url.match(/id=([a-zA-Z0-9_-]+)/);
+            
+            if (matchD) id = matchD[1];
+            else if (matchId) id = matchId[1];
+            
+            if (id) return `https://lh3.googleusercontent.com/d/${id}`;
+            if (url.startsWith('http')) return url; // คืนค่าลิงก์เดิมถ้าไม่ใช่ Drive
+            
+            return null;
+        };
+
         window.processScannedTank = (tankId) => {
             if (!window.currentUser || !window.appUser) {
                 Swal.fire({ icon: 'info', title: 'รอสักครู่', text: 'กำลังตรวจสอบสิทธิ์การใช้งาน...' });
@@ -1522,7 +1539,7 @@
             const action = document.getElementById('current-action').value;
             
             const existingTank = window.globalTanks.find(t => t.id === tankId);
-            let skippedStep = null; // ตัวแปรสำหรับเก็บชื่อกระบวนการที่ถูกข้าม
+            let skippedStep = null; 
 
             if (existingTank) {
                 let isDuplicate = false;
@@ -1557,13 +1574,11 @@
                     return; 
                 }
 
-                // --- ตรวจสอบการข้ามกระบวนการ (Skip Process) ---
                 if (existingTank.status === 'Ready to Use' && action === 'dispatch') skippedStep = 'บรรจุ';
                 if (existingTank.status === 'Stock' && action === 'receive') skippedStep = 'จ่ายออก';
                 if (existingTank.status === 'Customer' && action === 'pack') skippedStep = 'รับเข้า';
 
             } else {
-                // กรณีถังใหม่เอี่ยม ไม่มีในระบบ
                 if (action === 'pack') skippedStep = 'รับเข้า';
                 if (action === 'dispatch') skippedStep = 'รับเข้าและบรรจุ';
             }
@@ -1572,6 +1587,7 @@
                 pendingTankId = tankId;
                 document.getElementById('modal-tank-id').innerText = `${tankId}`;
                 document.getElementById('cond-note').value = '';
+                document.getElementById('cond-drive-link').value = ''; // เคลียร์ช่องลิงก์
                 document.querySelectorAll('input[type=radio][value="ดี"]').forEach(radio => radio.checked = true);
                 document.querySelectorAll('input[type=radio][value="พร้อมนำไปบรรจุ"]').forEach(radio => radio.checked = true);
                 document.getElementById('condition-modal').classList.remove('hidden');
@@ -1583,7 +1599,7 @@
             };
 
             if (action === 'receive') {
-                window.pendingSkippedStep = skippedStep; // เก็บไว้ใช้ตอนกดยืนยันใน Modal
+                window.pendingSkippedStep = skippedStep; 
                 if (skippedStep) {
                     Swal.fire({
                         title: 'พบการข้ามกระบวนการ!',
@@ -1607,28 +1623,34 @@
             } else {
                 let actionName = action === 'pack' ? 'บรรจุ' : 'จ่ายออก';
                 
-                let swalConfig = {
-                    title: 'ยืนยันการบันทึก?',
-                    html: `ต้องการอัปเดตถัง <b>${tankId}</b> เป็นสถานะ "${actionName}" ใช่หรือไม่?`,
-                    icon: 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: '#2563eb',
-                    cancelButtonColor: '#9ca3af',
-                    confirmButtonText: 'ยืนยัน',
-                    cancelButtonText: 'ยกเลิก'
-                };
-
+                // เพิ่มช่องกรอก Google Drive เข้าไปใน Swal สำหรับหน้าบรรจุ/จ่ายออก
+                let swalHtml = `ต้องการอัปเดตถัง <b>${tankId}</b> เป็นสถานะ "${actionName}" ใช่หรือไม่?`;
                 if (skippedStep) {
-                    swalConfig.title = 'พบการข้ามกระบวนการ!';
-                    swalConfig.html = `<div class="mb-3 text-red-500 font-bold bg-red-50 p-2 rounded-lg border border-red-200">⚠️ ข้ามขั้นตอน "${skippedStep}"</div>ต้องการอัปเดตถัง <b>${tankId}</b> เป็นสถานะ <b>"${actionName}"</b> ใช่หรือไม่?`;
-                    swalConfig.icon = 'warning';
-                    swalConfig.confirmButtonColor = '#f59e0b';
-                    swalConfig.confirmButtonText = 'ยืนยัน (ข้ามขั้นตอน)';
+                    swalHtml = `<div class="mb-3 text-red-500 font-bold bg-red-50 p-2 rounded-lg border border-red-200">⚠️ ข้ามขั้นตอน "${skippedStep}"</div>` + swalHtml;
                 }
+                swalHtml += `
+                    <div class="mt-5 text-left">
+                        <label class="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider"><i class="fa-brands fa-google-drive text-blue-500 mr-1"></i> แนบรูปลิงก์ Google Drive (ตัวเลือก)</label>
+                        <input type="text" id="swal-drive-link" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:outline-none bg-blue-50/50" placeholder="วางลิงก์แชร์รูปภาพ...">
+                    </div>`;
 
-                Swal.fire(swalConfig).then((result) => {
+                Swal.fire({
+                    title: 'ยืนยันการบันทึก?',
+                    html: swalHtml,
+                    icon: skippedStep ? 'warning' : 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: skippedStep ? '#f59e0b' : '#2563eb',
+                    cancelButtonColor: '#9ca3af',
+                    confirmButtonText: skippedStep ? 'ยืนยัน (ข้ามขั้นตอน)' : 'ยืนยัน',
+                    cancelButtonText: 'ยกเลิก',
+                    preConfirm: () => {
+                        return document.getElementById('swal-drive-link').value.trim();
+                    }
+                }).then((result) => {
                     if (result.isConfirmed) {
-                        executeTankUpdate(tankId, action, { skipped: skippedStep });
+                        const driveLink = result.value;
+                        const imageUrl = window.extractDriveImage(driveLink);
+                        executeTankUpdate(tankId, action, { skipped: skippedStep, imageUrl: imageUrl });
                     } else {
                         resetScannerUI();
                     }
@@ -1665,20 +1687,21 @@
                 const snap = await getDoc(docRef);
                 const now = Date.now();
                 
-                // ดึงข้อมูลเดิมมาเพื่อคำนวณรอบ
                 let tankData = snap.exists() ? snap.data() : null;
                 let history = tankData ? (tankData.history || []) : [];
                 let cycleCount = tankData ? (tankData.cycleCount || 0) : 0;
 
-                // --- ระบบตรวจสอบการครบรอบ (Cycle Increment) ---
-                // ถ้ารับเข้า แล้วสถานะเดิมคือ 'Customer' (ขายแล้วรอกลับ) ให้นับเพิ่ม 1 รอบทันที
                 if (actionType === 'receive' && tankData && tankData.status === 'Customer') {
                     cycleCount += 1;
                     let cycleText = `[จบรอบที่ ${cycleCount}]`;
                     finalNote = finalNote ? `${cycleText} ${finalNote}` : cycleText;
                 }
 
+                // แนบรูปภาพลงประวัติถ้ามี
                 const historyEntry = { date: now, action: actionText, user: window.appUser, note: finalNote };
+                if (conditions?.imageUrl) {
+                    historyEntry.imageUrl = conditions.imageUrl;
+                }
                 history.push(historyEntry);
 
                 await setDoc(docRef, { 
@@ -1686,7 +1709,7 @@
                     updatedAt: now, 
                     note: finalNote, 
                     history,
-                    cycleCount: cycleCount // บันทึกรอบลงฐานข้อมูล
+                    cycleCount: cycleCount 
                 }, { merge: true });
 
                 document.getElementById('manual-tank-id').value = '';
@@ -1755,6 +1778,7 @@
             const b = document.querySelector('input[name="cond-base"]:checked').value;
             const r = document.querySelector('input[name="cond-ready"]:checked').value;
             const n = document.getElementById('cond-note').value;
+            const driveLink = document.getElementById('cond-drive-link').value.trim();
             
             const bad = (r === 'ไม่พร้อมนำไปบรรจุ');
             
@@ -1762,6 +1786,8 @@
             if (window.pendingSkippedStep) {
                 noteStr = `[ข้ามขั้นตอน: ${window.pendingSkippedStep}] ` + noteStr;
             }
+            
+            const imageUrl = window.extractDriveImage(driveLink);
             
             Swal.fire({
                 title: 'ยืนยันการบันทึกข้อมูล?',
@@ -1774,7 +1800,7 @@
                 cancelButtonText: 'ยกเลิก'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    executeTankUpdate(pendingTankId, 'receive', { isBad: bad, note: noteStr });
+                    executeTankUpdate(pendingTankId, 'receive', { isBad: bad, note: noteStr, imageUrl: imageUrl });
                     document.getElementById('condition-modal').classList.add('hidden');
                 }
             });
@@ -1907,16 +1933,12 @@
                                 ${idx === 0 ? '<span class="bg-blue-100 text-blue-600 text-[8px] px-1.5 py-0.5 rounded ml-1">ล่าสุด</span>' : ''}
                             </div>
                             ${h.note ? `<div class="text-[10px] text-gray-500 italic mt-1 leading-snug">${h.note}</div>` : ''}
+                            ${h.imageUrl ? `<div class="mt-2 mb-1"><img src="${h.imageUrl}" class="w-full h-32 md:h-40 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('${h.imageUrl}', '_blank')"></div>` : ''}
                             <div class="text-[9px] text-gray-400 mt-1">โดย: <span class="font-bold">${h.user}</span></div>
                         ${idx === 0 ? '</div>' : '</div>'}
-                        <div class="text-right shrink-0 ml-2 flex flex-col items-end">
+                        <div class="text-right shrink-0 ml-2">
                             <div class="text-[10px] font-bold text-gray-600">${new Date(h.date).toLocaleDateString('th-TH', {year: '2-digit', month: 'short', day: 'numeric'})}</div>
                             <div class="text-[9px] text-gray-400">${new Date(h.date).toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'})} น.</div>
-                            ${window.appRole === 'admin' ? `
-                            <button onclick="event.stopPropagation(); deleteHistoryEntry('${tank.id}', ${h.date})" class="mt-2 text-gray-300 hover:text-red-500 transition-colors" title="ลบประวัตินี้">
-                                <i class="fa-solid fa-trash-can text-xs"></i>
-                            </button>
-                            ` : ''}
                         </div>
                     </div>
                 `).join('');
@@ -1924,14 +1946,7 @@
 
             const contentHtml = `
                 <div class="mb-5 border-b border-gray-100 pb-5">
-                    <div class="flex justify-between items-start mb-3">
-                        <span class="font-black text-gray-800 text-2xl">${tank.id}</span>
-                        ${window.appRole === 'admin' ? `
-                        <button onclick="confirmDeleteSpecificTank('${tank.id}')" class="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 flex items-center shadow-sm">
-                            <i class="fa-solid fa-trash-can mr-1"></i> ลบข้อมูลถังนี้
-                        </button>
-                        ` : ''}
-                    </div>
+                    <span class="font-black text-gray-800 text-2xl block mb-3">${tank.id}</span>
                     <div class="flex items-center flex-wrap gap-2 mb-3">
                         <span class="text-xs font-bold px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 inline-block">
                             <i class="fa-solid fa-arrows-spin mr-1"></i> ใช้งานไปแล้ว: ${tank.cycleCount || 0} รอบ
@@ -1958,6 +1973,53 @@
 
         window.closeHistoryModal = () => {
             document.getElementById('history-modal').classList.add('hidden');
+        };
+
+        // --- DELETE ALL HISTORY LOGIC ---
+        window.confirmDeleteAllHistory = () => {
+            if (window.appRole !== 'admin') {
+                Swal.fire({ icon: 'error', title: 'ไม่มีสิทธิ์', text: 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถลบข้อมูลทั้งหมดได้' });
+                return;
+            }
+            if (!window.globalTanks || window.globalTanks.length === 0) {
+                Swal.fire({ icon: 'info', title: 'ไม่มีข้อมูล', text: 'ระบบว่างเปล่า ไม่มีข้อมูลให้ลบ' });
+                return;
+            }
+
+            Swal.fire({
+                title: 'ยืนยันการล้างประวัติทั้งหมด?',
+                text: '⚠️ ข้อมูลถังและประวัติทั้งหมดในระบบจะถูกลบทิ้งถาวร และไม่สามารถกู้คืนได้ พิมพ์คำว่า "CONFIRM" เพื่อยืนยัน',
+                icon: 'warning',
+                input: 'text',
+                inputPlaceholder: 'พิมพ์ CONFIRM',
+                showCancelButton: true,
+                confirmButtonColor: '#ef4444',
+                cancelButtonColor: '#9ca3af',
+                confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> ลบข้อมูลทั้งหมด',
+                cancelButtonText: 'ยกเลิก',
+                preConfirm: (inputValue) => {
+                    if (inputValue !== 'CONFIRM') {
+                        Swal.showValidationMessage('กรุณาพิมพ์คำว่า CONFIRM ให้ถูกต้อง');
+                    }
+                }
+            }).then(async (result) => {
+                if (result.isConfirmed) {
+                    try {
+                        Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'อาจใช้เวลาสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                        
+                        // ทยอยลบข้อมูลถังออกทีละรายการใน Firestore
+                        const deletePromises = window.globalTanks.map(tank => 
+                            deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tanks', tank.id))
+                        );
+                        await Promise.all(deletePromises);
+
+                        Swal.fire({ icon: 'success', title: 'ลบข้อมูลสำเร็จ!', text: 'ข้อมูลถังทั้งหมดถูกล้างออกจากระบบแล้ว', timer: 2000, showConfirmButton: false });
+                    } catch (error) {
+                        console.error(error);
+                        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลทั้งหมดได้', 'error');
+                    }
+                }
+            });
         };
 
         // --- EXPORT TO EXCEL LOGIC ---
@@ -2050,145 +2112,6 @@
                 console.error("Export error:", error);
                 Swal.fire({ icon: 'error', title: 'เกิดข้อผิดพลาด', text: 'ไม่สามารถสร้างไฟล์ Excel ได้', confirmButtonColor: '#2563eb' });
             }
-        };
-
-        // --- CLEAR ALL DATA LOGIC ---
-        window.confirmClearAllData = () => {
-            // ป้องกันกรณีผู้ใช้ไม่มีสิทธิ์
-            if (window.appRole !== 'admin') {
-                Swal.fire('ปฏิเสธการเข้าถึง', 'เฉพาะผู้ดูแลระบบ (Admin) เท่านั้นที่สามารถล้างข้อมูลได้', 'error');
-                return;
-            }
-
-            if (!window.globalTanks || window.globalTanks.length === 0) {
-                Swal.fire('ไม่มีข้อมูล', 'ไม่มีข้อมูลในระบบเพื่อทำการลบ', 'info');
-                return;
-            }
-
-            Swal.fire({
-                title: 'คำเตือนขั้นสูงสุด!',
-                text: 'คุณกำลังจะลบข้อมูลถังและประวัติ "ทั้งหมด" ออกจากระบบ การกระทำนี้ไม่สามารถกู้คืนได้ คุณแน่ใจหรือไม่?',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#9ca3af',
-                confirmButtonText: '<i class="fa-solid fa-triangle-exclamation mr-1"></i> รับทราบ ต้องการลบ',
-                cancelButtonText: 'ยกเลิก'
-            }).then((result) => {
-                if (result.isConfirmed) {
-                    // ให้พิมพ์ยืนยันเพื่อป้องกันการกดพลาด
-                    Swal.fire({
-                        title: 'ยืนยันการลบข้อมูลทั้งหมด',
-                        text: 'กรุณาพิมพ์คำว่า "CONFIRM" เพื่อยืนยันการลบข้อมูลทั้งหมด',
-                        input: 'text',
-                        inputPlaceholder: 'พิมพ์ CONFIRM ที่นี่',
-                        showCancelButton: true,
-                        confirmButtonColor: '#ef4444',
-                        confirmButtonText: 'ยืนยันการลบถาวร',
-                        cancelButtonText: 'ยกเลิก',
-                        preConfirm: (inputValue) => {
-                            if (inputValue !== 'CONFIRM') {
-                                Swal.showValidationMessage('คำยืนยันไม่ถูกต้อง กรุณาพิมพ์ CONFIRM ตัวพิมพ์ใหญ่');
-                            }
-                        }
-                    }).then(async (innerResult) => {
-                        if (innerResult.isConfirmed) {
-                            Swal.fire({ 
-                                title: 'กำลังลบข้อมูลทั้งหมด...', 
-                                text: 'กรุณารอสักครู่ ห้ามปิดหน้าต่างนี้',
-                                allowOutsideClick: false, 
-                                didOpen: () => { Swal.showLoading(); }
-                            });
-                            
-                            try {
-                                // วนลูปสร้าง Promise สำหรับลบข้อมูลถังแต่ละใบผ่าน deleteDoc
-                                const deletePromises = window.globalTanks.map(tank => 
-                                    deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tanks', tank.id))
-                                );
-                                
-                                // รอให้ลบเสร็จทั้งหมด
-                                await Promise.all(deletePromises);
-                                
-                                Swal.fire({ 
-                                    icon: 'success', 
-                                    title: 'ล้างข้อมูลสำเร็จ', 
-                                    text: 'ประวัติและข้อมูลถังทั้งหมดถูกลบออกจากระบบแล้ว', 
-                                    timer: 2000, 
-                                    showConfirmButton: false 
-                                });
-                            } catch (error) {
-                                console.error("Delete All Error:", error);
-                                Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้ทั้งหมด กรุณาตรวจสอบการเชื่อมต่อ', 'error');
-                            }
-                        }
-                    });
-                }
-            });
-        };
-
-        // ลบถังเฉพาะรายการจากตาราง
-        window.confirmDeleteSpecificTank = (tankId) => {
-            if (window.appRole !== 'admin') return;
-            
-            Swal.fire({
-                title: 'ยืนยันการลบข้อมูล?',
-                text: `คุณต้องการลบประวัติและข้อมูลของถัง "${tankId}" ใช่หรือไม่?`,
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#9ca3af',
-                confirmButtonText: '<i class="fa-solid fa-trash-can mr-1"></i> ลบข้อมูล',
-                cancelButtonText: 'ยกเลิก'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    try {
-                        Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tanks', tankId));
-                        closeHistoryModal(); // ปิดหน้าต่างประวัติถ้าเปิดอยู่
-                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: `ข้อมูลถัง ${tankId} ถูกลบแล้ว`, timer: 1500, showConfirmButton: false });
-                    } catch (error) {
-                        console.error(error);
-                        Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้', 'error');
-                    }
-                }
-            });
-        };
-
-        // ลบประวัติการทำงานแต่ละรายการ (ในหน้าต่างประวัติ)
-        window.deleteHistoryEntry = (tankId, entryDate) => {
-            if (window.appRole !== 'admin') return;
-
-            Swal.fire({
-                title: 'ลบประวัติรายการนี้?',
-                text: 'ระบบจะลบประวัตินี้ออกจากการทำงานของถัง',
-                icon: 'warning',
-                showCancelButton: true,
-                confirmButtonColor: '#ef4444',
-                cancelButtonColor: '#9ca3af',
-                confirmButtonText: 'ลบรายการ',
-                cancelButtonText: 'ยกเลิก'
-            }).then(async (result) => {
-                if (result.isConfirmed) {
-                    try {
-                        Swal.fire({ title: 'กำลังลบ...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-                        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tanks', tankId);
-                        const snap = await getDoc(docRef);
-                        if (snap.exists()) {
-                            let history = snap.data().history || [];
-                            // คัดกรองเอาเฉพาะรายการที่เวลาไม่ตรงกับที่กดลบ (ลบออก)
-                            history = history.filter(h => h.date !== entryDate);
-                            await setDoc(docRef, { history: history }, { merge: true });
-                            
-                            // รีเฟรชหน้าประวัติใหม่ให้เป็นข้อมูลล่าสุด
-                            viewTankHistory(tankId);
-                            Swal.fire({ icon: 'success', title: 'ลบสำเร็จ', timer: 1000, showConfirmButton: false });
-                        }
-                    } catch (error) {
-                        console.error(error);
-                        Swal.fire('ข้อผิดพลาด', 'ไม่สามารถลบประวัติได้', 'error');
-                    }
-                }
-            });
         };
 
     </script>

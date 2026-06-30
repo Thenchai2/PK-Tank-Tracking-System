@@ -4,6 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PK Tank Tracking</title>
+    <!-- Google Fonts for Sarabun -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700;800&display=swap" rel="stylesheet">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -544,12 +548,6 @@
                     </div>
                 </div>
                 <input type="text" id="cond-note" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white bg-gray-50 text-sm transition-colors">
-                
-                <!-- เพิ่มช่องใส่ลิงก์ Google Drive -->
-                <div class="mt-4">
-                    <label class="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider"><i class="fa-brands fa-google-drive text-blue-500 mr-1"></i> แนบรูปจาก Google Drive (ตัวเลือก)</label>
-                    <input type="text" id="cond-drive-link" placeholder="วางลิงก์แชร์รูปภาพที่นี่..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white bg-blue-50/50 text-sm transition-colors">
-                </div>
             </div>
 
             <div class="flex gap-3">
@@ -1587,7 +1585,6 @@
                 pendingTankId = tankId;
                 document.getElementById('modal-tank-id').innerText = `${tankId}`;
                 document.getElementById('cond-note').value = '';
-                document.getElementById('cond-drive-link').value = ''; // เคลียร์ช่องลิงก์
                 document.querySelectorAll('input[type=radio][value="ดี"]').forEach(radio => radio.checked = true);
                 document.querySelectorAll('input[type=radio][value="พร้อมนำไปบรรจุ"]').forEach(radio => radio.checked = true);
                 document.getElementById('condition-modal').classList.remove('hidden');
@@ -1623,16 +1620,17 @@
             } else {
                 let actionName = action === 'pack' ? 'บรรจุ' : 'จ่ายออก';
                 
-                // เพิ่มช่องกรอก Google Drive เข้าไปใน Swal สำหรับหน้าบรรจุ/จ่ายออก
                 let swalHtml = `ต้องการอัปเดตถัง <b>${tankId}</b> เป็นสถานะ "${actionName}" ใช่หรือไม่?`;
                 if (skippedStep) {
                     swalHtml = `<div class="mb-3 text-red-500 font-bold bg-red-50 p-2 rounded-lg border border-red-200">⚠️ ข้ามขั้นตอน "${skippedStep}"</div>` + swalHtml;
                 }
-                swalHtml += `
-                    <div class="mt-5 text-left">
-                        <label class="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider"><i class="fa-brands fa-google-drive text-blue-500 mr-1"></i> แนบรูปลิงก์ Google Drive (ตัวเลือก)</label>
-                        <input type="text" id="swal-drive-link" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:outline-none bg-blue-50/50" placeholder="วางลิงก์แชร์รูปภาพ...">
-                    </div>`;
+                if (action === 'dispatch') {
+                    swalHtml += `
+                        <div class="mt-4 text-left">
+                            <label class="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider"><i class="fa-solid fa-receipt text-blue-500 mr-1"></i> เลขที่อ้างอิง (จำเป็นต้องระบุ)</label>
+                            <input type="text" id="swal-ref-no" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:outline-none bg-blue-50/50" placeholder="ระบุเลขที่อ้างอิง (เช่น INV-1234)...">
+                        </div>`;
+                }
 
                 Swal.fire({
                     title: 'ยืนยันการบันทึก?',
@@ -1644,13 +1642,20 @@
                     confirmButtonText: skippedStep ? 'ยืนยัน (ข้ามขั้นตอน)' : 'ยืนยัน',
                     cancelButtonText: 'ยกเลิก',
                     preConfirm: () => {
-                        return document.getElementById('swal-drive-link').value.trim();
+                        let refNo = '';
+                        if (action === 'dispatch') {
+                            refNo = document.getElementById('swal-ref-no').value.trim();
+                            if (!refNo) {
+                                Swal.showValidationMessage('กรุณาระบุเลขที่อ้างอิง');
+                                return false;
+                            }
+                        }
+                        return { refNo };
                     }
                 }).then((result) => {
                     if (result.isConfirmed) {
-                        const driveLink = result.value;
-                        const imageUrl = window.extractDriveImage(driveLink);
-                        executeTankUpdate(tankId, action, { skipped: skippedStep, imageUrl: imageUrl });
+                        const { refNo } = result.value;
+                        executeTankUpdate(tankId, action, { skipped: skippedStep, refNo: refNo });
                     } else {
                         resetScannerUI();
                     }
@@ -1701,6 +1706,9 @@
                 const historyEntry = { date: now, action: actionText, user: window.appUser, note: finalNote };
                 if (conditions?.imageUrl) {
                     historyEntry.imageUrl = conditions.imageUrl;
+                }
+                if (conditions?.refNo) {
+                    historyEntry.refNo = conditions.refNo;
                 }
                 history.push(historyEntry);
 
@@ -1778,7 +1786,6 @@
             const b = document.querySelector('input[name="cond-base"]:checked').value;
             const r = document.querySelector('input[name="cond-ready"]:checked').value;
             const n = document.getElementById('cond-note').value;
-            const driveLink = document.getElementById('cond-drive-link').value.trim();
             
             const bad = (r === 'ไม่พร้อมนำไปบรรจุ');
             
@@ -1786,8 +1793,6 @@
             if (window.pendingSkippedStep) {
                 noteStr = `[ข้ามขั้นตอน: ${window.pendingSkippedStep}] ` + noteStr;
             }
-            
-            const imageUrl = window.extractDriveImage(driveLink);
             
             Swal.fire({
                 title: 'ยืนยันการบันทึกข้อมูล?',
@@ -1800,7 +1805,7 @@
                 cancelButtonText: 'ยกเลิก'
             }).then((result) => {
                 if (result.isConfirmed) {
-                    executeTankUpdate(pendingTankId, 'receive', { isBad: bad, note: noteStr, imageUrl: imageUrl });
+                    executeTankUpdate(pendingTankId, 'receive', { isBad: bad, note: noteStr });
                     document.getElementById('condition-modal').classList.add('hidden');
                 }
             });
@@ -1933,6 +1938,7 @@
                                 ${idx === 0 ? '<span class="bg-blue-100 text-blue-600 text-[8px] px-1.5 py-0.5 rounded ml-1">ล่าสุด</span>' : ''}
                             </div>
                             ${h.note ? `<div class="text-[10px] text-gray-500 italic mt-1 leading-snug">${h.note}</div>` : ''}
+                            ${h.refNo ? `<div class="text-[10px] text-blue-600 font-bold mt-1 leading-snug"><i class="fa-solid fa-receipt mr-1"></i>เลขที่อ้างอิง: ${h.refNo}</div>` : ''}
                             ${h.imageUrl ? `<div class="mt-2 mb-1"><img src="${h.imageUrl}" class="w-full h-32 md:h-40 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('${h.imageUrl}', '_blank')"></div>` : ''}
                             <div class="text-[9px] text-gray-400 mt-1">โดย: <span class="font-bold">${h.user}</span></div>
                         ${idx === 0 ? '</div>' : '</div>'}
@@ -2075,6 +2081,7 @@
                         'รอบการใช้งาน': tank.cycleCount || 0,
                         'จำนวนวันคงค้าง': days,
                         'กระบวนการที่ทำ': '-',
+                        'เลขที่อ้างอิง': '-',
                         'วันที่ทำรายการ': '-',
                         'เวลาที่ทำรายการ': '-',
                         'ผู้ทำรายการ': '-',
@@ -2089,6 +2096,7 @@
                             'รอบการใช้งาน': tank.cycleCount || 0,
                             'จำนวนวันคงค้าง': days,
                             'กระบวนการที่ทำ': h.action,
+                            'เลขที่อ้างอิง': h.refNo || '-',
                             'วันที่ทำรายการ': new Date(h.date).toLocaleDateString('th-TH', { year: 'numeric', month: '2-digit', day: '2-digit' }),
                             'เวลาที่ทำรายการ': new Date(h.date).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.',
                             'ผู้ทำรายการ': h.user,

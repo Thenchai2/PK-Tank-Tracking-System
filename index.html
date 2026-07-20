@@ -2078,9 +2078,21 @@
 
         window.confirmDeleteTank = () => {
             const tankId = window.editingTankId;
+            // นับจำนวนไฟล์ที่จะถูกลบด้วย
+            const tankData = window.globalTanks.find(t => t.id === tankId);
+            const imageCount = tankData && tankData.history
+                ? tankData.history.reduce((count, h) => {
+                    if (h.imageUrl) count += h.imageUrl.split(',').filter(u => u.trim()).length;
+                    return count;
+                }, 0)
+                : 0;
+            const fileNote = imageCount > 0
+                ? `รวมถึงรูปภาพ/ไฟล์ที่แนบไว้ทั้งหมด ${imageCount} ไฟล์ จะถูกลบออกจาก Google Drive ด้วย`
+                : 'การกระทำนี้ไม่สามารถกู้คืนได้';
+
             Swal.fire({
                 title: 'ยืนยันการลบข้อมูล?',
-                text: `คุณต้องการลบประวัติของถัง "${tankId}" ออกจากระบบใช่หรือไม่? (การกระทำนี้ไม่สามารถกู้คืนได้)`,
+                html: `คุณต้องการลบประวัติของถัง <b>"${tankId}"</b> ออกจากระบบใช่หรือไม่?<br><span class="text-sm text-red-500">${fileNote}</span>`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
@@ -2090,11 +2102,11 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-                        await saveToServer("delete_tank", { tankId: tankId });
+                        Swal.fire({ title: 'กำลังลบข้อมูลและไฟล์...', text: imageCount > 0 ? `กำลังลบ ${imageCount} ไฟล์จาก Google Drive` : 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                        await saveToServer("delete_tank_with_files", { tankId: tankId });
                         await window.fetchDatabase(true);
                         window.closeEditTankModal();
-                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: `ข้อมูลถัง ${tankId} ถูกลบแล้ว`, timer: 1500, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: `ข้อมูลถัง ${tankId} และไฟล์ที่เกี่ยวข้องถูกลบแล้ว`, timer: 2000, showConfirmButton: false });
                     } catch (error) {
                         console.error(error);
                         Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
@@ -3175,15 +3187,23 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'อาจใช้เวลาสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                        // นับจำนวนไฟล์ทั้งหมดที่จะถูกลบ
+                        const totalFiles = window.globalTanks.reduce((count, tank) => {
+                            if (tank.history) {
+                                tank.history.forEach(h => {
+                                    if (h.imageUrl) count += h.imageUrl.split(',').filter(u => u.trim()).length;
+                                });
+                            }
+                            return count;
+                        }, 0);
+
+                        Swal.fire({ title: 'กำลังล้างข้อมูลและไฟล์ทั้งหมด...', text: totalFiles > 0 ? `กำลังลบ ${totalFiles} ไฟล์จาก Google Drive อาจใช้เวลาสักครู่` : 'อาจใช้เวลาสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
                         
-                        // ทยอยลบข้อมูลถังออกทีละรายการใน Google Drive JSON
-                        for (const tank of window.globalTanks) {
-                            await saveToServer("delete_tank", { tankId: tank.id });
-                        }
+                        // ลบทั้งหมดพร้อมไฟล์ใน Drive ด้วย action เดียว
+                        await saveToServer("delete_all_with_files", {});
                         await window.fetchDatabase(true);
 
-                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: 'ข้อมูลถังทั้งหมดถูกล้างออกจากระบบแล้ว', timer: 2000, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: 'ข้อมูลถังและไฟล์ทั้งหมดถูกล้างออกจากระบบแล้ว', timer: 2000, showConfirmButton: false });
                     } catch (error) {
                         console.error(error);
                         Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลทั้งหมดได้', 'error');

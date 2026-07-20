@@ -4,10 +4,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>PK Tank Tracking</title>
+    <!-- App Logo Favicon -->
+    <link rel="icon" type="image/png" href="https://lh3.googleusercontent.com/d/1kH8HErbms_U0xnoiJ7jlW7r79FK3hXeB">
     <!-- Google Fonts for Sarabun -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;700;800&display=swap" rel="stylesheet">
+    <!-- Chart.js for visualizations -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- FontAwesome -->
@@ -147,8 +151,49 @@
                     
                     <!-- DASHBOARD VIEW -->
                     <div id="view-dashboard" class="tab-content active">
-                        <div class="flex items-center justify-between mb-6">
+                        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
                             <h2 class="text-2xl font-black text-gray-800 tracking-tight">แดชบอร์ดสรุปสถานะ</h2>
+                            
+                            <!-- Dashboard Filter Controls -->
+                            <div class="bg-white p-3 rounded-2xl shadow-sm border border-gray-100 flex flex-wrap items-center gap-3 text-xs font-bold text-gray-600">
+                                <div class="flex items-center gap-1.5">
+                                    <span>วันที่:</span>
+                                    <input type="date" id="dash-filter-start" onchange="renderDashboard()" class="border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 text-[11px] font-bold">
+                                    <span>ถึง</span>
+                                    <input type="date" id="dash-filter-end" onchange="renderDashboard()" class="border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 text-[11px] font-bold">
+                                </div>
+                                <div class="h-6 w-px bg-gray-200 hidden sm:block"></div>
+                                <div class="flex items-center gap-1.5">
+                                    <span>เดือน:</span>
+                                    <select id="dash-filter-month" onchange="renderDashboard()" class="border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 text-[11px] font-bold cursor-pointer">
+                                        <option value="all">ทั้งหมด</option>
+                                        <option value="0">มกราคม</option>
+                                        <option value="1">กุมภาพันธ์</option>
+                                        <option value="2">มีนาคม</option>
+                                        <option value="3">เมษายน</option>
+                                        <option value="4">พฤษภาคม</option>
+                                        <option value="5">มิถุนายน</option>
+                                        <option value="6">กรกฎาคม</option>
+                                        <option value="7">สิงหาคม</option>
+                                        <option value="8">กันยายน</option>
+                                        <option value="9">ตุลาคม</option>
+                                        <option value="10">พฤศจิกายน</option>
+                                        <option value="11">ธันวาคม</option>
+                                    </select>
+                                </div>
+                                <div class="h-6 w-px bg-gray-200 hidden sm:block"></div>
+                                <div class="flex items-center gap-1.5">
+                                    <span>ปี (พ.ศ.):</span>
+                                    <select id="dash-filter-year" onchange="renderDashboard()" class="border border-gray-200 rounded-lg p-1.5 focus:outline-none focus:ring-1 focus:ring-blue-500 bg-gray-50 text-[11px] font-bold cursor-pointer">
+                                        <option value="all">ทั้งหมด</option>
+                                        <option value="2025">2568</option>
+                                        <option value="2026">2569</option>
+                                        <option value="2027">2570</option>
+                                        <option value="2028">2571</option>
+                                    </select>
+                                </div>
+                                <button onclick="clearDashboardFilters()" class="text-blue-600 hover:text-blue-700 ml-1" title="ล้างตัวกรอง"><i class="fa-solid fa-rotate-left"></i></button>
+                            </div>
                         </div>
                         <div id="dashboard-container" class="space-y-4">
                             <div class="text-center py-12 text-gray-400"><i class="fa-solid fa-spinner fa-spin text-3xl"></i><br><span class="text-sm mt-2 block">กำลังโหลดข้อมูล...</span></div>
@@ -158,16 +203,21 @@
                     <!-- STOCK VIEW (สต็อกถัง) -->
                     <div id="view-stock" class="tab-content">
                         <div class="max-w-5xl mx-auto">
-                            <h2 class="text-xl font-black text-gray-800 mb-6">รายการสต็อกถังทั้งหมด</h2>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                                <h2 class="text-xl font-black text-gray-800">รายการสต็อกถังทั้งหมด</h2>
+                                <div class="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-100 w-max" id="stock-count-badge">
+                                    จำนวนทั้งหมด: -- ใบ
+                                </div>
+                            </div>
                             
                             <!-- Filter & Search Controls -->
                             <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-3 md:gap-4">
                                 <div class="flex-1 flex border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500 rounded-xl overflow-hidden bg-gray-50">
                                     <span class="pl-4 py-3 text-gray-400"><i class="fa-solid fa-search"></i></span>
-                                    <input type="text" id="search-stock-input" oninput="renderStockTable()" placeholder="ค้นหารหัสถัง..." class="w-full px-3 py-3 outline-none uppercase text-sm font-bold text-gray-700 bg-transparent">
+                                    <input type="text" id="search-stock-input" oninput="resetStockPageAndRender()" placeholder="ค้นหารหัสถัง..." class="w-full px-3 py-3 outline-none uppercase text-sm font-bold text-gray-700 bg-transparent">
                                 </div>
                                 <div class="w-full md:w-64 shrink-0 relative">
-                                    <select id="filter-stock-status" onchange="renderStockTable()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 text-blue-800 text-sm font-bold appearance-none cursor-pointer">
+                                    <select id="filter-stock-status" onchange="resetStockPageAndRender()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 text-blue-800 text-sm font-bold appearance-none cursor-pointer">
                                         <option value="all">ทั้งหมด (All)</option>
                                         <option value="ready">ถังเปล่าพร้อมใช้</option>
                                         <option value="stock">บรรจุแล้วรอขาย</option>
@@ -200,6 +250,13 @@
                                 <div id="stock-empty-state" class="text-center py-16 hidden">
                                     <i class="fa-solid fa-box-open text-gray-200 text-4xl mb-3"></i>
                                     <p class="text-gray-400 text-sm font-bold" id="stock-empty-text">ไม่พบข้อมูล</p>
+                                </div>
+                                
+                                <!-- Pagination Bar -->
+                                <div id="stock-pagination-container" class="bg-gray-50 p-4 border-t border-gray-100 flex items-center justify-center gap-4 text-xs font-bold text-gray-500">
+                                    <button onclick="changeStockPage(-1)" id="btn-stock-prev" class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">&lt;&lt;</button>
+                                    <span>หน้า <span id="stock-page-num">1</span> / <span id="stock-page-total">1</span></span>
+                                    <button onclick="changeStockPage(1)" id="btn-stock-next" class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">&gt;&gt;</button>
                                 </div>
                             </div>
                         </div>
@@ -261,9 +318,14 @@
                     <!-- MANAGE VIEW (จัดการถัง) -->
                     <div id="view-manage" class="tab-content">
                         <div class="max-w-5xl mx-auto">
-                            <div class="flex justify-between items-center mb-6">
-                                <h2 class="text-xl font-black text-gray-800">จัดการข้อมูลถัง</h2>
-                                <button onclick="openSettingsModal()" class="bg-white text-gray-700 px-3 py-2 rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors shadow-sm border border-gray-200">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                                <div class="flex items-center gap-3">
+                                    <h2 class="text-xl font-black text-gray-800">จัดการข้อมูลถัง</h2>
+                                    <div class="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-100 w-max" id="manage-count-badge">
+                                        จำนวนทั้งหมด: -- ใบ
+                                    </div>
+                                </div>
+                                <button onclick="openSettingsModal()" class="bg-white text-gray-700 px-3 py-2 rounded-xl text-xs font-bold hover:bg-gray-50 transition-colors shadow-sm border border-gray-200 self-start sm:self-auto">
                                     <i class="fa-solid fa-gear mr-1"></i> ตั้งค่าสูญหาย
                                 </button>
                             </div>
@@ -272,10 +334,10 @@
                             <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-3 md:gap-4">
                                 <div class="flex-1 flex border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500 rounded-xl overflow-hidden bg-gray-50">
                                     <span class="pl-4 py-3 text-gray-400"><i class="fa-solid fa-search"></i></span>
-                                    <input type="text" id="search-manage-input" oninput="renderManageTable()" placeholder="ค้นหารหัสถัง..." class="w-full px-3 py-3 outline-none uppercase text-sm font-bold text-gray-700 bg-transparent">
+                                    <input type="text" id="search-manage-input" oninput="resetManagePageAndRender()" placeholder="ค้นหารหัสถัง..." class="w-full px-3 py-3 outline-none uppercase text-sm font-bold text-gray-700 bg-transparent">
                                 </div>
                                 <div class="w-full md:w-64 shrink-0 relative">
-                                    <select id="filter-manage-status" onchange="renderManageTable()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 text-blue-800 text-sm font-bold appearance-none cursor-pointer">
+                                    <select id="filter-manage-status" onchange="resetManagePageAndRender()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 text-blue-800 text-sm font-bold appearance-none cursor-pointer">
                                         <option value="all">ทั้งหมด (All)</option>
                                         <option value="ready">ถังเปล่าพร้อมใช้</option>
                                         <option value="stock">บรรจุแล้วรอขาย</option>
@@ -307,6 +369,13 @@
                                 <div id="manage-empty-state" class="text-center py-16 hidden">
                                     <i class="fa-solid fa-box-open text-gray-200 text-4xl mb-3"></i>
                                     <p class="text-gray-400 text-sm font-bold" id="manage-empty-text">ไม่พบข้อมูล</p>
+                                </div>
+                                
+                                <!-- Pagination Bar -->
+                                <div id="manage-pagination-container" class="bg-gray-50 p-4 border-t border-gray-100 flex items-center justify-center gap-4 text-xs font-bold text-gray-500">
+                                    <button onclick="changeManagePage(-1)" id="btn-manage-prev" class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">&lt;&lt;</button>
+                                    <span>หน้า <span id="manage-page-num">1</span> / <span id="manage-page-total">1</span></span>
+                                    <button onclick="changeManagePage(1)" id="btn-manage-next" class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">&gt;&gt;</button>
                                 </div>
                             </div>
                         </div>
@@ -397,16 +466,21 @@
                     <!-- SEARCH VIEW -->
                     <div id="view-search" class="tab-content">
                         <div class="max-w-5xl mx-auto">
-                            <h2 class="text-xl font-black text-gray-800 mb-6">ค้นหาและประวัติ</h2>
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                                <h2 class="text-xl font-black text-gray-800">ค้นหาและประวัติ</h2>
+                                <div class="bg-blue-50 text-blue-700 text-xs font-bold px-3 py-1.5 rounded-xl border border-blue-100 w-max" id="search-count-badge">
+                                    จำนวนทั้งหมด: -- ใบ
+                                </div>
+                            </div>
                             
                             <!-- Filter & Search Controls -->
                             <div class="bg-white p-4 md:p-5 rounded-2xl shadow-sm border border-gray-100 mb-6 flex flex-col md:flex-row gap-3 md:gap-4">
                                 <div class="flex-1 flex border border-gray-200 focus-within:ring-2 focus-within:ring-blue-500 rounded-xl overflow-hidden bg-gray-50">
                                     <span class="pl-4 py-3 text-gray-400"><i class="fa-solid fa-search"></i></span>
-                                    <input type="text" id="search-history-input" oninput="renderSearchTable()" placeholder="ค้นหารหัสถังที่ต้องการประวัติ..." class="w-full px-3 py-3 outline-none uppercase text-sm font-bold text-gray-700 bg-transparent">
+                                    <input type="text" id="search-history-input" oninput="resetSearchPageAndRender()" placeholder="ค้นหารหัสถังที่ต้องการประวัติ..." class="w-full px-3 py-3 outline-none uppercase text-sm font-bold text-gray-700 bg-transparent">
                                 </div>
                                 <div class="w-full md:w-64 shrink-0 relative">
-                                    <select id="filter-history-status" onchange="renderSearchTable()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 text-blue-800 text-sm font-bold appearance-none cursor-pointer">
+                                    <select id="filter-history-status" onchange="resetSearchPageAndRender()" class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 bg-blue-50 text-blue-800 text-sm font-bold appearance-none cursor-pointer">
                                         <option value="all">ทั้งหมด (All)</option>
                                         <option value="ready">ถังเปล่าพร้อมใช้</option>
                                         <option value="stock">บรรจุแล้วรอขาย</option>
@@ -445,6 +519,51 @@
                                 <div id="search-empty-state" class="text-center py-16 hidden">
                                     <i class="fa-solid fa-clock-rotate-left text-gray-200 text-4xl mb-3"></i>
                                     <p class="text-gray-400 text-sm font-bold" id="search-empty-text">ไม่พบข้อมูล</p>
+                                </div>
+                                
+                                <!-- Pagination Bar -->
+                                <div id="search-pagination-container" class="bg-gray-50 p-4 border-t border-gray-100 flex items-center justify-center gap-4 text-xs font-bold text-gray-500">
+                                    <button onclick="changeSearchPage(-1)" id="btn-search-prev" class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">&lt;&lt;</button>
+                                    <span>หน้า <span id="search-page-num">1</span> / <span id="search-page-total">1</span></span>
+                                    <button onclick="changeSearchPage(1)" id="btn-search-next" class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">&gt;&gt;</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HISTORY VIEW -->
+                    <div id="view-history" class="tab-content">
+                        <div class="max-w-3xl mx-auto">
+                            <!-- Back Button -->
+                            <button onclick="switchTab(window.previousTab || 'search')" class="mb-4 bg-white text-blue-600 hover:text-blue-800 px-4 py-2.5 rounded-xl text-sm font-bold border border-gray-200 shadow-sm transition-all hover:bg-gray-50 flex items-center gap-2">
+                                <i class="fa-solid fa-arrow-left"></i> ย้อนกลับ
+                            </button>
+                            
+                            <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 md:p-8">
+                                <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-6">
+                                    <h2 class="text-xl font-black text-gray-800"><i class="fa-solid fa-clock-rotate-left text-blue-600 mr-2"></i>ประวัติการทำงาน</h2>
+                                </div>
+                                
+                                <!-- Tank Details Header -->
+                                <div id="history-page-header" class="mb-5 border-b border-gray-100 pb-5">
+                                    <!-- Dynamic header injected here -->
+                                </div>
+                                
+                                <!-- Timeline Card -->
+                                <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100 overflow-hidden">
+                                    <div class="font-bold text-gray-700 mb-4 flex justify-between items-center border-b border-gray-200 pb-3">
+                                        <span class="text-xs uppercase tracking-wider"><i class="fa-solid fa-list-ul mr-1 text-gray-400"></i> ลำดับเหตุการณ์ (<span id="history-total-count">0</span>)</span>
+                                    </div>
+                                    <div id="history-timeline-list" class="space-y-3">
+                                        <!-- Timeline items injected here -->
+                                    </div>
+                                    
+                                    <!-- Pagination Bar -->
+                                    <div id="history-pagination-container" class="mt-6 p-4 bg-white border border-gray-100 rounded-xl flex items-center justify-center gap-4 text-xs font-bold text-gray-500 shadow-sm">
+                                        <button onclick="changeHistoryPage(-1)" id="btn-history-prev" class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">&lt;&lt;</button>
+                                        <span>หน้า <span id="history-page-num">1</span> / <span id="history-page-total">1</span></span>
+                                        <button onclick="changeHistoryPage(1)" id="btn-history-next" class="px-3 py-1 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">&gt;&gt;</button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -507,10 +626,10 @@
                     <p class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">1. สภาพวาล์ว</p>
                     <div class="flex gap-3">
                         <label class="flex-1 border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-blue-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 transition-all font-bold text-gray-600">
-                            <input type="radio" name="cond-valve" value="ดี" class="hidden" checked> ดี
+                            <input type="radio" name="cond-valve" value="ดี" class="hidden" checked onchange="toggleConditionImageField()"> ดี
                         </label>
                         <label class="flex-1 border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 has-[:checked]:bg-red-50 has-[:checked]:border-red-500 has-[:checked]:text-red-700 transition-all font-bold text-gray-600">
-                            <input type="radio" name="cond-valve" value="รั่วซึม" class="hidden"> รั่วซึม
+                            <input type="radio" name="cond-valve" value="รั่วซึม" class="hidden" onchange="toggleConditionImageField()"> รั่วซึม
                         </label>
                     </div>
                 </div>
@@ -518,10 +637,10 @@
                     <p class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">2. โครงสร้าง</p>
                     <div class="flex gap-3">
                         <label class="flex-1 border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-blue-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 transition-all font-bold text-gray-600">
-                            <input type="radio" name="cond-struct" value="ดี" class="hidden" checked> ดี
+                            <input type="radio" name="cond-struct" value="ดี" class="hidden" checked onchange="toggleConditionImageField()"> ดี
                         </label>
                         <label class="flex-1 border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 has-[:checked]:bg-red-50 has-[:checked]:border-red-500 has-[:checked]:text-red-700 transition-all font-bold text-gray-600">
-                            <input type="radio" name="cond-struct" value="เป็นสนิม" class="hidden"> สนิม
+                            <input type="radio" name="cond-struct" value="เป็นสนิม" class="hidden" onchange="toggleConditionImageField()"> สนิม
                         </label>
                     </div>
                 </div>
@@ -529,10 +648,10 @@
                     <p class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">3. ฐาน</p>
                     <div class="flex gap-3">
                         <label class="flex-1 border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-blue-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 transition-all font-bold text-gray-600">
-                            <input type="radio" name="cond-base" value="ดี" class="hidden" checked> ดี
+                            <input type="radio" name="cond-base" value="ดี" class="hidden" checked onchange="toggleConditionImageField()"> ดี
                         </label>
                         <label class="flex-1 border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 has-[:checked]:bg-red-50 has-[:checked]:border-red-500 has-[:checked]:text-red-700 transition-all font-bold text-gray-600">
-                            <input type="radio" name="cond-base" value="ชำรุด" class="hidden"> ชำรุด
+                            <input type="radio" name="cond-base" value="ชำรุด" class="hidden" onchange="toggleConditionImageField()"> ชำรุด
                         </label>
                     </div>
                 </div>
@@ -540,14 +659,104 @@
                     <p class="text-xs font-bold text-gray-400 mb-2 uppercase tracking-wider">4. ความพร้อมการใช้งาน</p>
                     <div class="flex gap-3 flex-col sm:flex-row">
                         <label class="flex-1 border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-blue-50 has-[:checked]:bg-blue-50 has-[:checked]:border-blue-500 has-[:checked]:text-blue-700 transition-all font-bold text-gray-600">
-                            <input type="radio" name="cond-ready" value="พร้อมนำไปบรรจุ" class="hidden" checked> พร้อม
+                            <input type="radio" name="cond-ready" value="พร้อมนำไปบรรจุ" class="hidden" checked onchange="toggleConditionImageField()"> พร้อม
                         </label>
                         <label class="flex-1 border-2 border-gray-200 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 has-[:checked]:bg-red-50 has-[:checked]:border-red-500 has-[:checked]:text-red-700 transition-all font-bold text-gray-600">
-                            <input type="radio" name="cond-ready" value="ไม่พร้อมนำไปบรรจุ" class="hidden"> ไม่พร้อม
+                            <input type="radio" name="cond-ready" value="ไม่พร้อมนำไปบรรจุ" class="hidden" onchange="toggleConditionImageField()"> ไม่พร้อม
                         </label>
                     </div>
                 </div>
                 <input type="text" id="cond-note" placeholder="หมายเหตุเพิ่มเติม (ถ้ามี)..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:bg-white bg-gray-50 text-sm transition-colors">
+                
+                <!-- 5. แนบรูปถ่ายสภาพถัง -->
+                <div class="space-y-4 border-t border-gray-100 pt-4">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">5. แนบรูปถ่ายสภาพถัง</p>
+                    
+                    <!-- General upload (Only shown when all are good) -->
+                    <div id="cond-image-general-container">
+                        <p class="text-[11px] font-bold text-gray-500 mb-2">📸 รูปถ่ายสภาพถังทั่วไป (ไม่บังคับ)</p>
+                        <div class="flex items-center gap-3">
+                            <label for="cond-image-general" class="flex-1 border-2 border-dashed border-gray-300 rounded-xl p-3 text-center cursor-pointer hover:bg-gray-50 flex items-center justify-center gap-2 text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors">
+                                <i class="fa-solid fa-camera"></i> <span id="cond-image-general-label">เลือกรูปภาพ</span>
+                            </label>
+                            <input type="file" id="cond-image-general" accept="image/*" class="hidden" onchange="handleConditionImageSelect(event, 'general')">
+                            <button type="button" id="btn-clear-cond-image-general" onclick="clearConditionImage('general')" class="hidden px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold hover:bg-red-100 transition-colors" title="ลบรูปภาพ">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <div id="cond-image-general-preview-container" class="mt-2 hidden">
+                            <img id="cond-image-general-preview" src="" class="w-full h-32 object-cover rounded-xl border border-gray-200 shadow-inner">
+                        </div>
+                    </div>
+
+                    <!-- Valve upload (Only shown when valve is leaky) -->
+                    <div id="cond-image-valve-container" class="hidden">
+                        <p class="text-[11px] font-bold text-red-500 mb-2">⚠️ รูปถ่ายสภาพวาล์วที่รั่วซึม</p>
+                        <div class="flex items-center gap-3">
+                            <label for="cond-image-valve" class="flex-1 border-2 border-dashed border-red-200 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 flex items-center justify-center gap-2 text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
+                                <i class="fa-solid fa-camera"></i> <span id="cond-image-valve-label">เลือกรูปภาพวาล์วรั่ว</span>
+                            </label>
+                            <input type="file" id="cond-image-valve" accept="image/*" class="hidden" onchange="handleConditionImageSelect(event, 'valve')">
+                            <button type="button" id="btn-clear-cond-image-valve" onclick="clearConditionImage('valve')" class="hidden px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold hover:bg-red-100 transition-colors" title="ลบรูปภาพ">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <div id="cond-image-valve-preview-container" class="mt-2 hidden">
+                            <img id="cond-image-valve-preview" src="" class="w-full h-32 object-cover rounded-xl border border-gray-200 shadow-inner">
+                        </div>
+                    </div>
+
+                    <!-- Structure upload (Only shown when structure is rusty) -->
+                    <div id="cond-image-struct-container" class="hidden">
+                        <p class="text-[11px] font-bold text-red-500 mb-2">⚠️ รูปถ่ายสภาพโครงสร้างที่เป็นสนิม</p>
+                        <div class="flex items-center gap-3">
+                            <label for="cond-image-struct" class="flex-1 border-2 border-dashed border-red-200 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 flex items-center justify-center gap-2 text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
+                                <i class="fa-solid fa-camera"></i> <span id="cond-image-struct-label">เลือกรูปภาพโครงสร้างสนิม</span>
+                            </label>
+                            <input type="file" id="cond-image-struct" accept="image/*" class="hidden" onchange="handleConditionImageSelect(event, 'struct')">
+                            <button type="button" id="btn-clear-cond-image-struct" onclick="clearConditionImage('struct')" class="hidden px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold hover:bg-red-100 transition-colors" title="ลบรูปภาพ">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <div id="cond-image-struct-preview-container" class="mt-2 hidden">
+                            <img id="cond-image-struct-preview" src="" class="w-full h-32 object-cover rounded-xl border border-gray-200 shadow-inner">
+                        </div>
+                    </div>
+
+                    <!-- Base upload (Only shown when base is damaged) -->
+                    <div id="cond-image-base-container" class="hidden">
+                        <p class="text-[11px] font-bold text-red-500 mb-2">⚠️ รูปถ่ายสภาพฐานที่ชำรุด</p>
+                        <div class="flex items-center gap-3">
+                            <label for="cond-image-base" class="flex-1 border-2 border-dashed border-red-200 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 flex items-center justify-center gap-2 text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
+                                <i class="fa-solid fa-camera"></i> <span id="cond-image-base-label">เลือกรูปภาพฐานชำรุด</span>
+                            </label>
+                            <input type="file" id="cond-image-base" accept="image/*" class="hidden" onchange="handleConditionImageSelect(event, 'base')">
+                            <button type="button" id="btn-clear-cond-image-base" onclick="clearConditionImage('base')" class="hidden px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold hover:bg-red-100 transition-colors" title="ลบรูปภาพ">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <div id="cond-image-base-preview-container" class="mt-2 hidden">
+                            <img id="cond-image-base-preview" src="" class="w-full h-32 object-cover rounded-xl border border-gray-200 shadow-inner">
+                        </div>
+                    </div>
+
+                    <!-- Ready status upload (Only shown when readiness is not ready) -->
+                    <div id="cond-image-ready-container" class="hidden">
+                        <p class="text-[11px] font-bold text-red-500 mb-2">⚠️ รูปถ่ายสภาพไม่พร้อมนำไปบรรจุ</p>
+                        <div class="flex items-center gap-3">
+                            <label for="cond-image-ready" class="flex-1 border-2 border-dashed border-red-200 rounded-xl p-3 text-center cursor-pointer hover:bg-gray-50 flex items-center justify-center gap-2 text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
+                                <i class="fa-solid fa-camera"></i> <span id="cond-image-ready-label">เลือกรูปภาพไม่พร้อมใช้</span>
+                            </label>
+                            <input type="file" id="cond-image-ready" accept="image/*" class="hidden" onchange="handleConditionImageSelect(event, 'ready')">
+                            <button type="button" id="btn-clear-cond-image-ready" onclick="clearConditionImage('ready')" class="hidden px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold hover:bg-red-100 transition-colors" title="ลบรูปภาพ">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                        </div>
+                        <div id="cond-image-ready-preview-container" class="mt-2 hidden">
+                            <img id="cond-image-ready-preview" src="" class="w-full h-32 object-cover rounded-xl border border-gray-200 shadow-inner">
+                        </div>
+                    </div>
+                </div>
             </div>
 
             <div class="flex gap-3">
@@ -638,45 +847,119 @@
         </div>
     </div>
 
-    <!-- History Modal -->
-    <div id="history-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden px-4 py-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 md:p-8 transform transition-all max-h-[95vh] flex flex-col">
-            <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-4 shrink-0">
-                <h3 class="text-xl font-black text-gray-800"><i class="fa-solid fa-clock-rotate-left text-blue-600 mr-2"></i>ประวัติการทำงาน</h3>
-                <button onclick="closeHistoryModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i class="fa-solid fa-xmark text-2xl"></i>
-                </button>
+    <!-- Image Viewer Modal -->
+    <div id="image-viewer-modal" class="fixed inset-0 bg-black bg-opacity-80 backdrop-blur-sm flex items-center justify-center z-50 hidden px-4 py-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl p-4 md:p-6 transform transition-all max-h-[90vh] flex flex-col relative">
+            <button onclick="closeImageViewerModal()" class="absolute -top-3 -right-3 md:top-3 md:right-3 w-10 h-10 bg-white text-gray-500 hover:text-gray-700 rounded-full flex items-center justify-center border border-gray-200 shadow-md transition-colors z-10">
+                <i class="fa-solid fa-xmark text-xl"></i>
+            </button>
+            <div class="flex-1 overflow-auto flex items-center justify-center bg-gray-50 rounded-2xl p-2 min-h-[300px]">
+                <img id="viewer-modal-img" src="" class="max-w-full max-h-[70vh] object-contain rounded-xl">
             </div>
-            
-            <div class="overflow-y-auto flex-1 pr-2 custom-scrollbar" id="history-modal-content">
-                <!-- History details injected here -->
+            <div class="mt-4 flex gap-3">
+                <button onclick="closeImageViewerModal()" class="flex-1 px-4 py-3.5 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors text-sm">ปิด</button>
+                <a id="btn-download-viewer-img" href="" download="" target="_blank" class="flex-1 px-4 py-3.5 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-colors text-sm text-center flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-download"></i> ดาวน์โหลดรูปภาพ
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pack Modal (สแกนบรรจุ) -->
+    <div id="pack-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden px-4 py-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 md:p-8 transform transition-all max-h-[95vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
+                <h3 class="text-xl font-black text-gray-800">ยืนยันการบรรจุ</h3>
+                <span class="bg-green-100 text-green-800 text-xs font-bold px-3 py-1 rounded-lg">บรรจุ</span>
+            </div>
+            <div id="pack-modal-skip-warning" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-700 text-sm font-bold"></div>
+            <p class="text-sm text-gray-500 font-bold mb-5 flex justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <span>รหัสถัง:</span>
+                <span id="pack-modal-tank-id" class="text-green-600 font-black text-base">---</span>
+            </p>
+
+            <!-- Required: 1 Photo -->
+            <div class="space-y-3 mb-6">
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">📸 ถ่ายภาพถังที่บรรจุ <span class="text-red-500">*จำเป็น</span></p>
+                <div class="flex items-center gap-3">
+                    <label for="pack-image" class="flex-1 border-2 border-dashed border-green-300 rounded-xl p-3 text-center cursor-pointer hover:bg-green-50 flex items-center justify-center gap-2 text-sm font-bold text-green-600 hover:text-green-700 transition-colors">
+                        <i class="fa-solid fa-camera"></i> <span id="pack-image-label">เลือกหรือถ่ายภาพ</span>
+                    </label>
+                    <input type="file" id="pack-image" accept="image/*" class="hidden" onchange="handlePackImageSelect(event)">
+                    <button type="button" id="btn-clear-pack-image" onclick="clearPackImage()" class="hidden px-3 py-3 bg-red-50 border border-red-200 rounded-xl text-red-600 font-bold hover:bg-red-100 transition-colors" title="ลบรูปภาพ">
+                        <i class="fa-solid fa-trash-can"></i>
+                    </button>
+                </div>
+                <div id="pack-image-preview-container" class="hidden mt-2">
+                    <img id="pack-image-preview" src="" class="w-full h-40 object-cover rounded-xl border border-green-200 shadow-inner">
+                    <p class="text-[10px] text-green-600 font-bold mt-1 text-center"><i class="fa-solid fa-circle-check mr-1"></i>เลือกรูปภาพแล้ว</p>
+                </div>
             </div>
 
-            <div class="mt-4 pt-4 border-t border-gray-100 shrink-0">
-                <button onclick="closeHistoryModal()" class="w-full px-4 py-4 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">ปิดหน้าต่าง</button>
+            <div class="flex gap-3">
+                <button onclick="closePackModal()" class="flex-1 px-4 py-4 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                <button id="btn-submit-pack" onclick="submitPackModal()" disabled class="flex-1 px-4 py-4 bg-gray-300 text-gray-500 rounded-xl font-bold transition-colors cursor-not-allowed" title="กรุณาถ่ายภาพก่อนยืนยัน">
+                    <i class="fa-solid fa-lock text-xs mr-1"></i> ยืนยัน
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Dispatch Modal (สแกนจ่ายออก) -->
+    <div id="dispatch-modal" class="fixed inset-0 bg-black bg-opacity-60 backdrop-blur-sm flex items-center justify-center z-50 hidden px-4 py-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md p-6 md:p-8 transform transition-all max-h-[95vh] overflow-y-auto">
+            <div class="flex items-center justify-between border-b border-gray-100 pb-4 mb-5">
+                <h3 class="text-xl font-black text-gray-800">ยืนยันการจ่ายออก</h3>
+                <span class="bg-purple-100 text-purple-800 text-xs font-bold px-3 py-1 rounded-lg">จ่ายออก</span>
+            </div>
+            <div id="dispatch-modal-skip-warning" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-700 text-sm font-bold"></div>
+            <p class="text-sm text-gray-500 font-bold mb-4 flex justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
+                <span>รหัสถัง:</span>
+                <span id="dispatch-modal-tank-id" class="text-purple-600 font-black text-base">---</span>
+            </p>
+
+            <!-- Ref No (required) -->
+            <div class="mb-4">
+                <label class="block text-xs font-bold text-gray-500 mb-2 uppercase tracking-wider"><i class="fa-solid fa-receipt text-purple-500 mr-1"></i> เลขที่อ้างอิง <span class="text-red-500">*จำเป็น</span></label>
+                <input type="text" id="dispatch-ref-no" placeholder="ระบุเลขที่อ้างอิง (เช่น INV-1234)..." class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 focus:bg-white bg-gray-50 text-sm transition-colors" oninput="updateDispatchSubmitBtn()">
+            </div>
+
+            <!-- Upload up to 6 images or 1 PDF (required) -->
+            <div class="mb-6 space-y-3">
+                <div class="flex items-center justify-between">
+                    <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">📎 ไฟล์แนบ <span class="text-red-500">*จำเป็น</span></p>
+                    <span id="dispatch-file-count" class="text-xs font-bold text-purple-600 bg-purple-50 px-2 py-1 rounded-lg">0 / 6</span>
+                </div>
+                <p class="text-[10px] text-gray-400">รูปภาพสูงสุด 6 ภาพ หรือไฟล์ PDF 1 ไฟล์ (เลือกอย่างใดอย่างหนึ่ง)</p>
+
+                <!-- Add file button -->
+                <div class="flex gap-2">
+                    <label for="dispatch-image-input" id="dispatch-add-image-btn" class="flex-1 border-2 border-dashed border-purple-300 rounded-xl p-3 text-center cursor-pointer hover:bg-purple-50 flex items-center justify-center gap-2 text-xs font-bold text-purple-600 hover:text-purple-700 transition-colors">
+                        <i class="fa-solid fa-image"></i> เพิ่มรูปภาพ
+                    </label>
+                    <input type="file" id="dispatch-image-input" accept="image/*" class="hidden" onchange="handleDispatchFileAdd(event, 'image')">
+                    <label for="dispatch-pdf-input" id="dispatch-add-pdf-btn" class="flex-1 border-2 border-dashed border-orange-300 rounded-xl p-3 text-center cursor-pointer hover:bg-orange-50 flex items-center justify-center gap-2 text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors">
+                        <i class="fa-solid fa-file-pdf"></i> เพิ่ม PDF
+                    </label>
+                    <input type="file" id="dispatch-pdf-input" accept="application/pdf" class="hidden" onchange="handleDispatchFileAdd(event, 'pdf')">
+                </div>
+
+                <!-- Previews grid -->
+                <div id="dispatch-files-preview" class="grid grid-cols-3 gap-2 mt-2"></div>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeDispatchModal()" class="flex-1 px-4 py-4 bg-gray-100 text-gray-700 rounded-xl font-bold hover:bg-gray-200 transition-colors">ยกเลิก</button>
+                <button id="btn-submit-dispatch" onclick="submitDispatchModal()" disabled class="flex-1 px-4 py-4 bg-gray-300 text-gray-500 rounded-xl font-bold transition-colors cursor-not-allowed" title="กรุณาแนบไฟล์และกรอกเลขที่อ้างอิงก่อนยืนยัน">
+                    <i class="fa-solid fa-lock text-xs mr-1"></i> ยืนยัน
+                </button>
             </div>
         </div>
     </div>
 
     <!-- Firebase SDK Setup -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, getDoc, deleteDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyBUSW7UlE_3tJQoRE6UM-IZRK51U7bUA78",
-            authDomain: "pk-tank-393ee.firebaseapp.com",
-            projectId: "pk-tank-393ee",
-            storageBucket: "pk-tank-393ee.firebasestorage.app",
-            messagingSenderId: "258998836085",
-            appId: "1:258998836085:web:426de6575f10d74b01113c",
-            measurementId: "G-3FV2TS5SSJ"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
-        const appId = 'pk-tank-393ee';
+        const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxaauQYW6enZ6evREbyx2hEFTnxO5MWPE1EWR4_NmdlFZICi5nozTTUHzPGrGi5t-0V/exec";
 
         // Global State
         window.globalTanks = [];
@@ -693,6 +976,58 @@
         window.appUser = null; 
         window.appRole = null; 
 
+        // Pagination and Filters State
+        window.stockCurrentPage = 1;
+        const stockPageSize = 20;
+
+        window.manageCurrentPage = 1;
+        const managePageSize = 20;
+
+        window.searchCurrentPage = 1;
+        const searchPageSize = 20;
+
+        window.historyCurrentPage = 1;
+        const historyPageSize = 10;
+        window.currentHistoryTankId = null;
+
+        window.resetStockPageAndRender = () => {
+            window.stockCurrentPage = 1;
+            renderStockTable();
+        };
+
+        window.changeStockPage = (dir) => {
+            window.stockCurrentPage += dir;
+            renderStockTable();
+        };
+
+        window.resetManagePageAndRender = () => {
+            window.manageCurrentPage = 1;
+            renderManageTable();
+        };
+
+        window.changeManagePage = (dir) => {
+            window.manageCurrentPage += dir;
+            renderManageTable();
+        };
+
+        window.resetSearchPageAndRender = () => {
+            window.searchCurrentPage = 1;
+            renderSearchTable();
+        };
+
+        window.changeSearchPage = (dir) => {
+            window.searchCurrentPage += dir;
+            renderSearchTable();
+        };
+
+        window.clearDashboardFilters = () => {
+            document.getElementById('dash-filter-start').value = '';
+            document.getElementById('dash-filter-end').value = '';
+            document.getElementById('dash-filter-month').value = 'all';
+            document.getElementById('dash-filter-year').value = 'all';
+            renderDashboard();
+        }; 
+
         // Database of Roles
         const SYSTEM_USERS = {
             'ADMIN': { pass: 'Admin', role: 'admin' },
@@ -701,7 +1036,7 @@
             'WH': { pass: '123', role: 'wh' }
         };
 
-        // Initialize Label Date to Today
+        // Initialize Label Date to Today & Session Restore
         document.addEventListener('DOMContentLoaded', () => {
             const today = new Date();
             const yyyy = today.getFullYear();
@@ -710,6 +1045,24 @@
             const dateInput = document.getElementById('label-input-date');
             if(dateInput) {
                 dateInput.value = `${yyyy}-${mm}-${dd}`;
+            }
+
+            // Restore session storage for auto login (refresh persistence)
+            const savedUser = sessionStorage.getItem('appUser');
+            const savedRole = sessionStorage.getItem('appRole');
+            if (savedUser && savedRole) {
+                window.appUser = savedUser;
+                window.appRole = savedRole;
+                
+                document.getElementById('display-user-desktop').innerText = window.appUser;
+                document.getElementById('display-user-mobile').innerText = window.appUser;
+
+                document.getElementById('login-screen').style.display = 'none';
+                document.getElementById('app-wrapper').style.display = 'flex';
+                
+                applyPermissions();
+                window.fetchDatabase(false);
+                switchTab('dashboard');
             }
         });
 
@@ -734,6 +1087,10 @@
                 window.appUser = userInput === 'ADMIN' ? 'Admin' : document.getElementById('login-user').value.trim();
                 window.appRole = SYSTEM_USERS[userInput].role;
                 
+                // Save to sessionStorage for persistent session (survives refreshes, cleared when tab closes)
+                sessionStorage.setItem('appUser', window.appUser);
+                sessionStorage.setItem('appRole', window.appRole);
+
                 document.getElementById('display-user-desktop').innerText = window.appUser;
                 document.getElementById('display-user-mobile').innerText = window.appUser;
 
@@ -742,7 +1099,8 @@
                 
                 applyPermissions();
                 
-                renderDashboard();
+                // Fetch data from Google Drive immediately upon login
+                window.fetchDatabase(false);
                 switchTab('dashboard');
                 
                 document.getElementById('login-user').value = '';
@@ -765,6 +1123,11 @@
                 if (result.isConfirmed) {
                     window.appUser = null;
                     window.appRole = null;
+                    
+                    // Clear persistent session storage
+                    sessionStorage.removeItem('appUser');
+                    sessionStorage.removeItem('appRole');
+                    
                     stopScanner();
                     document.getElementById('app-wrapper').style.display = 'none';
                     document.getElementById('login-screen').style.display = 'flex';
@@ -839,44 +1202,88 @@
             }
         }
 
-        // 1. Firebase Auth Init
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.currentUser = user;
-                updateAuthUI("ออนไลน์", false);
-                
-                const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'thresholds');
-                onSnapshot(configRef, (docSnap) => {
-                    if(docSnap.exists()) {
-                        window.lossThresholds = { ...window.lossThresholds, ...docSnap.data() };
-                        if(window.globalTanks.length > 0 && window.appUser) {
-                            if(document.getElementById('view-dashboard').classList.contains('active')) renderDashboard();
-                            if(document.getElementById('view-stock').classList.contains('active')) renderStockTable();
-                            if(document.getElementById('view-manage').classList.contains('active')) renderManageTable();
-                        }
+        // --- GOOGLE DRIVE DATABASE INTEGRATION ---
+        window.fetchDatabase = async (silent = false) => {
+            if (!silent) {
+                updateAuthUI("กำลังโหลด...", false);
+                Swal.fire({
+                    title: 'กำลังเชื่อมต่อระบบ...',
+                    allowOutsideClick: false,
+                    showConfirmButton: false,
+                    didOpen: () => {
+                        Swal.showLoading();
                     }
-                });
-
-                const tanksRef = collection(db, 'artifacts', appId, 'public', 'data', 'tanks');
-                onSnapshot(tanksRef, (snapshot) => {
-                    window.globalTanks = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    
-                    if (window.appUser) {
-                        if(document.getElementById('view-dashboard').classList.contains('active')) renderDashboard();
-                        if(document.getElementById('view-stock').classList.contains('active')) renderStockTable();
-                        if(document.getElementById('view-manage').classList.contains('active')) renderManageTable();
-                        if(document.getElementById('view-search').classList.contains('active')) renderSearchTable();
-                    }
-                }, (error) => {
-                    console.error("Firestore error:", error);
-                    document.getElementById('dashboard-container').innerHTML = `<div class="p-4 bg-red-100 text-red-700 rounded-xl text-center text-xs">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${error.code}</div>`;
                 });
             }
-        });
-        
-        signInAnonymously(auth).catch(err => {
-            updateAuthUI("เชื่อมต่อล้มเหลว", true);
-        });
+            try {
+                const response = await fetch(GAS_API_URL);
+                if (!response.ok) throw new Error("HTTP error " + response.status);
+                const data = await response.json();
+                
+                window.currentUser = { uid: "gas-user" }; // Mock user object to bypass verification checks
+                
+                // Map database settings and tanks
+                window.lossThresholds = data.settings || { ready: 30, stock: 45, customer: 7 };
+                
+                const tanksObj = data.tanks || {};
+                window.globalTanks = Object.keys(tanksObj).map(key => ({
+                    id: key,
+                    ...tanksObj[key]
+                }));
+                
+                updateAuthUI("ออนไลน์", false);
+                
+                if (!silent) {
+                    Swal.close();
+                }
+                
+                // Re-render UI
+                if (window.appUser) {
+                    if(document.getElementById('view-dashboard').classList.contains('active')) renderDashboard();
+                    if(document.getElementById('view-stock').classList.contains('active')) renderStockTable();
+                    if(document.getElementById('view-manage').classList.contains('active')) renderManageTable();
+                    if(document.getElementById('view-search').classList.contains('active')) renderSearchTable();
+                }
+            } catch (err) {
+                console.error("Error loading database:", err);
+                updateAuthUI("เชื่อมต่อล้มเหลว", true);
+                if (!silent) {
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'เกิดข้อผิดพลาด',
+                        text: 'ไม่สามารถโหลดข้อมูลจาก Google Drive ได้: ' + err.message,
+                        confirmButtonColor: '#ef4444'
+                    });
+                    document.getElementById('dashboard-container').innerHTML = `<div class="p-4 bg-red-100 text-red-700 rounded-xl text-center text-xs">เกิดข้อผิดพลาดในการโหลดข้อมูล: ${err.message}</div>`;
+                }
+            }
+        };
+
+        window.saveToServer = async (action, payload) => {
+            try {
+                const response = await fetch(GAS_API_URL, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "text/plain;charset=utf-8"
+                    },
+                    body: JSON.stringify({ action, payload })
+                });
+                if (!response.ok) throw new Error("HTTP error " + response.status);
+                const result = await response.json();
+                if (result.status === "error") throw new Error(result.message);
+                return result;
+            } catch (error) {
+                console.error("API Save Error:", error);
+                throw error;
+            }
+        };
+
+        // Polling background updates every 30 seconds
+        setInterval(() => {
+            if (window.appUser) {
+                window.fetchDatabase(true);
+            }
+        }, 30000);
 
         // --- LABEL GENERATOR LOGIC ---
         window.adjustLabelScale = () => {
@@ -1020,10 +1427,47 @@
                 return;
             }
 
-            let counts = { ready: 0, stock: 0, customer: 0, inactive: 0, loss: 0 };
-            const totalTanks = window.globalTanks.length;
+            // Filter global tanks based on dashboard filters
+            const filterStartVal = document.getElementById('dash-filter-start').value;
+            const filterEndVal = document.getElementById('dash-filter-end').value;
+            const filterMonthVal = document.getElementById('dash-filter-month').value;
+            const filterYearVal = document.getElementById('dash-filter-year').value;
 
-            window.globalTanks.forEach(tank => {
+            let filteredTanks = window.globalTanks;
+
+            if (filterStartVal || filterEndVal || filterMonthVal !== 'all' || filterYearVal !== 'all') {
+                filteredTanks = window.globalTanks.filter(tank => {
+                    if (!tank.updatedAt) return false;
+                    const date = new Date(tank.updatedAt);
+                    
+                    // Filter Start Date
+                    if (filterStartVal) {
+                        const start = new Date(filterStartVal);
+                        start.setHours(0,0,0,0);
+                        if (date < start) return false;
+                    }
+                    // Filter End Date
+                    if (filterEndVal) {
+                        const end = new Date(filterEndVal);
+                        end.setHours(23,59,59,999);
+                        if (date > end) return false;
+                    }
+                    // Filter Month (0-11)
+                    if (filterMonthVal !== 'all') {
+                        if (date.getMonth() !== parseInt(filterMonthVal)) return false;
+                    }
+                    // Filter Year
+                    if (filterYearVal !== 'all') {
+                        if (date.getFullYear() !== parseInt(filterYearVal)) return false;
+                    }
+                    return true;
+                });
+            }
+
+            let counts = { ready: 0, stock: 0, customer: 0, inactive: 0, loss: 0 };
+            const totalTanks = filteredTanks.length;
+
+            filteredTanks.forEach(tank => {
                 const days = calculateDays(tank.updatedAt);
                 const lossReason = getExpectedLossInfo(tank.status, days, tank.customThresholds);
 
@@ -1047,8 +1491,8 @@
                             <i class="fa-solid fa-boxes-stacked text-white text-2xl md:text-3xl"></i>
                         </div>
                         <div>
-                            <div class="text-base md:text-lg text-blue-50 font-bold">จำนวนถังในระบบทั้งหมด</div>
-                            <div class="text-[10px] md:text-xs text-blue-200 mt-1 font-medium">รวมทุกสถานะการใช้งาน</div>
+                            <div class="text-base md:text-lg text-blue-50 font-bold">จำนวนถังในระบบ (ตามตัวกรอง)</div>
+                            <div class="text-[10px] md:text-xs text-blue-200 mt-1 font-medium">รวมทุกสถานะการใช้งานที่กรองข้อมูลแล้ว</div>
                         </div>
                     </div>
                     <div class="text-4xl md:text-5xl font-black text-white">${totalTanks} <span class="text-base font-bold text-blue-200">ใบ</span></div>
@@ -1094,18 +1538,232 @@
                     </div>
                     <div class="text-4xl md:text-5xl font-black text-red-600">${counts.loss} <span class="text-base font-bold text-red-400">ใบ</span></div>
                 </div>
+
+                <!-- Visuals and charts section -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+                    <!-- กราฟสัดส่วนถัง และ สัดส่วนแต่ละเดือน -->
+                    <div class="space-y-6">
+                        <!-- สัดส่วนถังปัจจุบัน -->
+                        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                            <h3 class="text-sm font-black text-gray-800 mb-4 flex items-center gap-1.5"><i class="fa-solid fa-chart-pie text-blue-500"></i> สัดส่วนสถานะถังทั้งหมด</h3>
+                            <div class="w-full max-w-[240px] mx-auto h-[240px] relative">
+                                <canvas id="propChart" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- จำนวนความเคลื่อนไหวแต่ละเดือน -->
+                        <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm">
+                            <h3 class="text-sm font-black text-gray-800 mb-4 flex items-center gap-1.5"><i class="fa-solid fa-chart-column text-blue-500"></i> สัดส่วนถังแต่ละเดือน (ความเคลื่อนไหวรายเดือน)</h3>
+                            <div class="w-full h-[220px]">
+                                <canvas id="monthlyChart" class="w-full h-full"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- ตารางถังยอดฮิต 10 อันดับ -->
+                    <div class="bg-white p-5 rounded-2xl border border-gray-100 shadow-sm flex flex-col justify-between overflow-hidden">
+                        <div>
+                            <h3 class="text-sm font-black text-gray-800 mb-4 flex items-center gap-1.5"><i class="fa-solid fa-fire text-orange-500"></i> ถังที่มีการใช้งานบ่อยสุด 10 อันดับ</h3>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse text-xs">
+                                    <thead>
+                                        <tr class="bg-gray-50 border-b border-gray-200 text-gray-500 uppercase font-bold">
+                                            <th class="p-3 w-12 text-center">ลำดับ</th>
+                                            <th class="p-3">รหัสถัง</th>
+                                            <th class="p-3">สถานะปัจจุบัน</th>
+                                            <th class="p-3 text-center">รอบใช้งาน</th>
+                                            <th class="p-3">ใช้งานล่าสุด</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="top-tanks-tbody" class="divide-y divide-gray-100 font-medium">
+                                        <!-- Rows injected by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            <div id="top-tanks-empty" class="text-center py-16 text-gray-400 font-bold hidden">
+                                <i class="fa-solid fa-folder-open text-3xl mb-2 text-gray-200 block"></i>
+                                ไม่พบข้อมูล
+                            </div>
+                        </div>
+                    </div>
+                </div>
             `;
+
+            // Initialize Charts
+            if (window.propChartObj) window.propChartObj.destroy();
+            if (window.monthlyChartObj) window.monthlyChartObj.destroy();
+
+            // 1. Doughnut Chart for Proportions
+            const ctxProp = document.getElementById('propChart').getContext('2d');
+            window.propChartObj = new Chart(ctxProp, {
+                type: 'doughnut',
+                data: {
+                    labels: ['ถังเปล่าพร้อมใช้', 'บรรจุแล้วรอขาย', 'ขายแล้วรอกลับ', 'ถังไม่พร้อมใช้งาน', 'สูญหาย'],
+                    datasets: [{
+                        data: [counts.ready, counts.stock, counts.customer, counts.inactive, counts.loss],
+                        backgroundColor: [
+                            '#3b82f6', // blue-500
+                            '#eab308', // yellow-500
+                            '#22c55e', // green-500
+                            '#9ca3af', // gray-400
+                            '#ef4444'  // red-500
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                font: { family: 'Sarabun', size: 10, weight: 'bold' },
+                                boxWidth: 10,
+                                padding: 8
+                            }
+                        }
+                    },
+                    cutout: '60%'
+                }
+            });
+
+            // 2. Bar Chart for Monthly Updates
+            const monthsThai = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
+            
+            // Generate list of past 6 months
+            const last6Months = [];
+            const today = new Date();
+            for (let i = 5; i >= 0; i--) {
+                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                last6Months.push({
+                    month: d.getMonth(),
+                    year: d.getFullYear(),
+                    label: `${monthsThai[d.getMonth()]} ${d.getFullYear() + 543}` // พ.ศ.
+                });
+            }
+
+            // Count activity (history items) per month
+            const monthlyCounts = Array(6).fill(0);
+            filteredTanks.forEach(tank => {
+                if (tank.history && Array.isArray(tank.history)) {
+                    tank.history.forEach(hist => {
+                        if (!hist.date) return;
+                        const histDate = new Date(hist.date);
+                        const m = histDate.getMonth();
+                        const y = histDate.getFullYear();
+                        
+                        // Check if it fits in our last 6 months
+                        for (let i = 0; i < 6; i++) {
+                            if (last6Months[i].month === m && last6Months[i].year === y) {
+                                monthlyCounts[i]++;
+                                break;
+                            }
+                        }
+                    });
+                }
+            });
+
+            const ctxMonthly = document.getElementById('monthlyChart').getContext('2d');
+            window.monthlyChartObj = new Chart(ctxMonthly, {
+                type: 'bar',
+                data: {
+                    labels: last6Months.map(m => m.label),
+                    datasets: [{
+                        label: 'ความเคลื่อนไหว (รายการ)',
+                        data: monthlyCounts,
+                        backgroundColor: '#3b82f6', // blue-500
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                precision: 0,
+                                font: { family: 'Sarabun', size: 9 }
+                            }
+                        },
+                        x: {
+                            ticks: {
+                                font: { family: 'Sarabun', size: 9 }
+                            }
+                        }
+                    }
+                }
+            });
+
+            // 3. Top 10 Tanks table rendering
+            const topTanksTbody = document.getElementById('top-tanks-tbody');
+            const topTanksEmpty = document.getElementById('top-tanks-empty');
+            
+            // Sort by cycleCount descending
+            const sortedByUsage = [...filteredTanks].sort((a, b) => (b.cycleCount || 0) - (a.cycleCount || 0));
+            const top10 = sortedByUsage.slice(0, 10);
+
+            if (top10.length === 0) {
+                topTanksTbody.innerHTML = '';
+                topTanksEmpty.classList.remove('hidden');
+            } else {
+                topTanksEmpty.classList.add('hidden');
+                topTanksTbody.innerHTML = top10.map((tank, idx) => {
+                    let badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
+                    let statusText = tank.status;
+                    const days = calculateDays(tank.updatedAt);
+                    const lossReason = getExpectedLossInfo(tank.status, days, tank.customThresholds);
+
+                    if (lossReason || tank.status === 'Loss') {
+                        badgeClass = 'bg-red-50 text-red-700 border-red-200';
+                        statusText = 'คาดการณ์สูญหาย';
+                    } else if (tank.status === 'Ready to Use') {
+                        badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
+                        statusText = 'ถังเปล่าพร้อมใช้';
+                    } else if (tank.status === 'Stock') {
+                        badgeClass = 'bg-yellow-50 text-yellow-700 border-yellow-200';
+                        statusText = 'บรรจุแล้วรอขาย';
+                    } else if (tank.status === 'Customer') {
+                        badgeClass = 'bg-green-50 text-green-700 border-green-200';
+                        statusText = 'ขายแล้วรอกลับ';
+                    } else if (tank.status === 'Inactive') {
+                        badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
+                        statusText = 'ถังไม่พร้อมใช้งาน';
+                    }
+
+                    const lastActiveDate = tank.updatedAt ? new Date(tank.updatedAt).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' }) : '-';
+
+                    return `
+                        <tr class="hover:bg-gray-50/80 transition-colors">
+                            <td class="p-3 text-center font-bold text-gray-500">${idx + 1}</td>
+                            <td class="p-3 font-black text-gray-800 whitespace-nowrap">${tank.id}</td>
+                            <td class="p-3 whitespace-nowrap"><span class="${badgeClass} border px-2 py-0.5 rounded-lg text-[9px] font-bold">${statusText}</span></td>
+                            <td class="p-3 text-center"><span class="text-[9px] text-purple-600 font-bold border border-purple-200 bg-purple-50 px-2 py-0.5 rounded-lg">${tank.cycleCount || 0} รอบ</span></td>
+                            <td class="p-3 text-gray-500 whitespace-nowrap text-[10px]">${lastActiveDate}</td>
+                        </tr>
+                    `;
+                }).join('');
+            }
         }
 
         window.renderStockTable = () => {
             const tbody = document.getElementById('stock-table-body');
             const emptyState = document.getElementById('stock-empty-state');
             const emptyText = document.getElementById('stock-empty-text');
+            const countBadge = document.getElementById('stock-count-badge');
+            const paginationContainer = document.getElementById('stock-pagination-container');
             
             if (!window.globalTanks || window.globalTanks.length === 0) {
                 tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 emptyText.innerText = 'ยังไม่มีข้อมูลถังในระบบ';
+                countBadge.innerText = 'จำนวนทั้งหมด: 0 ใบ';
+                paginationContainer.style.display = 'none';
                 return;
             }
 
@@ -1128,17 +1786,38 @@
                 return false;
             });
 
-            if (filtered.length === 0) {
+            const totalItems = filtered.length;
+            countBadge.innerText = `จำนวนทั้งหมด: ${totalItems} ใบ`;
+
+            if (totalItems === 0) {
                 tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 emptyText.innerText = 'ไม่พบข้อมูลตามเงื่อนไขที่ระบุ';
+                paginationContainer.style.display = 'none';
                 return;
             }
 
             emptyState.classList.add('hidden');
+            paginationContainer.style.display = 'flex';
+            
             filtered.sort((a, b) => b.updatedAt - a.updatedAt);
 
-            tbody.innerHTML = filtered.map(tank => {
+            // Pagination logic
+            const totalPages = Math.ceil(totalItems / stockPageSize) || 1;
+            if (window.stockCurrentPage > totalPages) window.stockCurrentPage = totalPages;
+            if (window.stockCurrentPage < 1) window.stockCurrentPage = 1;
+
+            document.getElementById('stock-page-num').innerText = window.stockCurrentPage;
+            document.getElementById('stock-page-total').innerText = totalPages;
+
+            document.getElementById('btn-stock-prev').disabled = (window.stockCurrentPage === 1);
+            document.getElementById('btn-stock-next').disabled = (window.stockCurrentPage === totalPages);
+
+            const startIndex = (window.stockCurrentPage - 1) * stockPageSize;
+            const endIndex = startIndex + stockPageSize;
+            const paginatedItems = filtered.slice(startIndex, endIndex);
+
+            tbody.innerHTML = paginatedItems.map(tank => {
                 const days = calculateDays(tank.updatedAt);
                 const lossReason = getExpectedLossInfo(tank.status, days, tank.customThresholds);
                 
@@ -1186,15 +1865,20 @@
             }).join('');
         };
 
+
         window.renderManageTable = () => {
             const tbody = document.getElementById('manage-table-body');
             const emptyState = document.getElementById('manage-empty-state');
             const emptyText = document.getElementById('manage-empty-text');
+            const countBadge = document.getElementById('manage-count-badge');
+            const paginationContainer = document.getElementById('manage-pagination-container');
             
             if (!window.globalTanks || window.globalTanks.length === 0) {
                 tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 emptyText.innerText = 'ยังไม่มีข้อมูลถังในระบบ';
+                countBadge.innerText = 'จำนวนทั้งหมด: 0 ใบ';
+                paginationContainer.style.display = 'none';
                 return;
             }
 
@@ -1217,17 +1901,38 @@
                 return false;
             });
 
-            if (filtered.length === 0) {
+            const totalItems = filtered.length;
+            countBadge.innerText = `จำนวนทั้งหมด: ${totalItems} ใบ`;
+
+            if (totalItems === 0) {
                 tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 emptyText.innerText = 'ไม่พบข้อมูลตามเงื่อนไขที่ระบุ';
+                paginationContainer.style.display = 'none';
                 return;
             }
 
             emptyState.classList.add('hidden');
+            paginationContainer.style.display = 'flex';
+            
             filtered.sort((a, b) => b.updatedAt - a.updatedAt);
 
-            tbody.innerHTML = filtered.map(tank => {
+            // Pagination logic
+            const totalPages = Math.ceil(totalItems / managePageSize) || 1;
+            if (window.manageCurrentPage > totalPages) window.manageCurrentPage = totalPages;
+            if (window.manageCurrentPage < 1) window.manageCurrentPage = 1;
+
+            document.getElementById('manage-page-num').innerText = window.manageCurrentPage;
+            document.getElementById('manage-page-total').innerText = totalPages;
+
+            document.getElementById('btn-manage-prev').disabled = (window.manageCurrentPage === 1);
+            document.getElementById('btn-manage-next').disabled = (window.manageCurrentPage === totalPages);
+
+            const startIndex = (window.manageCurrentPage - 1) * managePageSize;
+            const endIndex = startIndex + managePageSize;
+            const paginatedItems = filtered.slice(startIndex, endIndex);
+
+            tbody.innerHTML = paginatedItems.map(tank => {
                 const days = calculateDays(tank.updatedAt);
                 const lossReason = getExpectedLossInfo(tank.status, days, tank.customThresholds);
                 
@@ -1340,9 +2045,8 @@
             Swal.fire({ title: 'กำลังบันทึกการแก้ไข...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
             
             try {
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tanks', tankId);
-                const snap = await getDoc(docRef);
-                let history = snap.exists() ? (snap.data().history || []) : [];
+                const existingTank = window.globalTanks.find(t => t.id === tankId);
+                let history = existingTank ? (existingTank.history || []) : [];
                 
                 history.push({
                     date: Date.now(),
@@ -1351,12 +2055,18 @@
                     note: noteUpdateText
                 });
 
-                await setDoc(docRef, { 
-                    status: newStatus, 
-                    updatedAt: Date.now(), 
-                    history, 
-                    customThresholds: customThresholds 
-                }, { merge: true });
+                const updatedTank = {
+                    status: newStatus,
+                    updatedAt: Date.now(),
+                    history: history,
+                    cycleCount: existingTank ? (existingTank.cycleCount || 0) : 0
+                };
+                if (customThresholds) {
+                    updatedTank.customThresholds = customThresholds;
+                }
+
+                await saveToServer("save_tanks", { [tankId]: updatedTank });
+                await window.fetchDatabase(true);
                 
                 window.closeEditTankModal();
                 Swal.fire({ icon: 'success', title: 'อัปเดตข้อมูลสำเร็จ', timer: 1500, showConfirmButton: false });
@@ -1381,7 +2091,8 @@
                 if (result.isConfirmed) {
                     try {
                         Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-                        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tanks', tankId));
+                        await saveToServer("delete_tank", { tankId: tankId });
+                        await window.fetchDatabase(true);
                         window.closeEditTankModal();
                         Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: `ข้อมูลถัง ${tankId} ถูกลบแล้ว`, timer: 1500, showConfirmButton: false });
                     } catch (error) {
@@ -1411,17 +2122,13 @@
             Swal.fire({ title: 'กำลังบันทึกการตั้งค่า...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
             
             try {
-                const configRef = doc(db, 'artifacts', appId, 'public', 'data', 'settings', 'thresholds');
-                await setDoc(configRef, { ready: r, stock: s, customer: c });
+                await saveToServer("save_settings", { ready: r, stock: s, customer: c });
                 
                 window.lossThresholds = { ready: r, stock: s, customer: c };
+                await window.fetchDatabase(true);
                 
                 window.closeSettingsModal();
                 Swal.fire({ icon: 'success', title: 'ตั้งค่าสำเร็จ', timer: 1500, showConfirmButton: false });
-                
-                renderDashboard();
-                if(document.getElementById('view-stock').classList.contains('active')) renderStockTable();
-                if(document.getElementById('view-manage').classList.contains('active')) renderManageTable();
                 
             } catch(e) {
                 console.error(e);
@@ -1587,6 +2294,8 @@
                 document.getElementById('cond-note').value = '';
                 document.querySelectorAll('input[type=radio][value="ดี"]').forEach(radio => radio.checked = true);
                 document.querySelectorAll('input[type=radio][value="พร้อมนำไปบรรจุ"]').forEach(radio => radio.checked = true);
+                if (window.clearAllConditionImages) window.clearAllConditionImages();
+                if (window.toggleConditionImageField) window.toggleConditionImageField();
                 document.getElementById('condition-modal').classList.remove('hidden');
             };
 
@@ -1618,48 +2327,232 @@
                     openReceiveModal();
                 }
             } else {
-                let actionName = action === 'pack' ? 'บรรจุ' : 'จ่ายออก';
-                
-                let swalHtml = `ต้องการอัปเดตถัง <b>${tankId}</b> เป็นสถานะ "${actionName}" ใช่หรือไม่?`;
-                if (skippedStep) {
-                    swalHtml = `<div class="mb-3 text-red-500 font-bold bg-red-50 p-2 rounded-lg border border-red-200">⚠️ ข้ามขั้นตอน "${skippedStep}"</div>` + swalHtml;
+                if (action === 'pack') {
+                    openPackModal(tankId, skippedStep);
+                } else {
+                    openDispatchModal(tankId, skippedStep);
                 }
-                if (action === 'dispatch') {
-                    swalHtml += `
-                        <div class="mt-4 text-left">
-                            <label class="block text-[10px] font-bold text-gray-500 mb-1 uppercase tracking-wider"><i class="fa-solid fa-receipt text-blue-500 mr-1"></i> เลขที่อ้างอิง (จำเป็นต้องระบุ)</label>
-                            <input type="text" id="swal-ref-no" class="w-full px-3 py-3 border-2 border-gray-200 rounded-xl text-sm focus:border-blue-500 focus:outline-none bg-blue-50/50" placeholder="ระบุเลขที่อ้างอิง (เช่น INV-1234)...">
-                        </div>`;
-                }
+            }
+        };
 
-                Swal.fire({
-                    title: 'ยืนยันการบันทึก?',
-                    html: swalHtml,
-                    icon: skippedStep ? 'warning' : 'question',
-                    showCancelButton: true,
-                    confirmButtonColor: skippedStep ? '#f59e0b' : '#2563eb',
-                    cancelButtonColor: '#9ca3af',
-                    confirmButtonText: skippedStep ? 'ยืนยัน (ข้ามขั้นตอน)' : 'ยืนยัน',
-                    cancelButtonText: 'ยกเลิก',
-                    preConfirm: () => {
-                        let refNo = '';
-                        if (action === 'dispatch') {
-                            refNo = document.getElementById('swal-ref-no').value.trim();
-                            if (!refNo) {
-                                Swal.showValidationMessage('กรุณาระบุเลขที่อ้างอิง');
-                                return false;
-                            }
-                        }
-                        return { refNo };
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        const { refNo } = result.value;
-                        executeTankUpdate(tankId, action, { skipped: skippedStep, refNo: refNo });
-                    } else {
-                        resetScannerUI();
-                    }
-                });
+        // ===================== PACK MODAL LOGIC =====================
+        let packPendingTankId = null;
+        let packPendingSkippedStep = null;
+        window.packImageData = { base64: null, name: null };
+
+        window.openPackModal = (tankId, skippedStep) => {
+            packPendingTankId = tankId;
+            packPendingSkippedStep = skippedStep;
+            document.getElementById('pack-modal-tank-id').innerText = tankId;
+            const warning = document.getElementById('pack-modal-skip-warning');
+            if (skippedStep) {
+                warning.classList.remove('hidden');
+                warning.innerHTML = `⚠️ ข้ามขั้นตอน "${skippedStep}"`;
+            } else {
+                warning.classList.add('hidden');
+            }
+            clearPackImage();
+            document.getElementById('pack-modal').classList.remove('hidden');
+        };
+
+        window.closePackModal = () => {
+            document.getElementById('pack-modal').classList.add('hidden');
+            clearPackImage();
+            document.getElementById('manual-tank-id').value = '';
+            if (document.getElementById('view-scan').classList.contains('active')) startScanner();
+        };
+
+        window.handlePackImageSelect = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                window.packImageData = { base64: e.target.result, name: `pack_${packPendingTankId}_${Date.now()}.jpg` };
+                document.getElementById('pack-image-label').innerText = file.name;
+                document.getElementById('pack-image-preview').src = e.target.result;
+                document.getElementById('pack-image-preview-container').classList.remove('hidden');
+                document.getElementById('btn-clear-pack-image').classList.remove('hidden');
+                // Unlock submit
+                const btn = document.getElementById('btn-submit-pack');
+                btn.disabled = false;
+                btn.className = 'flex-1 px-4 py-4 bg-green-600 text-white rounded-xl font-bold shadow-md hover:bg-green-700 transition-colors';
+                btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> ยืนยันบรรจุ';
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.clearPackImage = () => {
+            window.packImageData = { base64: null, name: null };
+            const fi = document.getElementById('pack-image');
+            if (fi) fi.value = '';
+            const lbl = document.getElementById('pack-image-label');
+            if (lbl) lbl.innerText = 'เลือกหรือถ่ายภาพ';
+            const prev = document.getElementById('pack-image-preview');
+            if (prev) prev.src = '';
+            const prevCont = document.getElementById('pack-image-preview-container');
+            if (prevCont) prevCont.classList.add('hidden');
+            const clearBtn = document.getElementById('btn-clear-pack-image');
+            if (clearBtn) clearBtn.classList.add('hidden');
+            // Lock submit
+            const btn = document.getElementById('btn-submit-pack');
+            if (btn) {
+                btn.disabled = true;
+                btn.className = 'flex-1 px-4 py-4 bg-gray-300 text-gray-500 rounded-xl font-bold transition-colors cursor-not-allowed';
+                btn.innerHTML = '<i class="fa-solid fa-lock text-xs mr-1"></i> ยืนยัน';
+            }
+        };
+
+        window.submitPackModal = async () => {
+            if (!window.packImageData.base64) return;
+            document.getElementById('pack-modal').classList.add('hidden');
+            try {
+                Swal.fire({ title: 'กำลังอัปโหลดภาพ...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+                const uploadRes = await saveToServer('upload_image', { base64Data: window.packImageData.base64, fileName: window.packImageData.name });
+                const imageUrl = (uploadRes && uploadRes.imageUrl) ? uploadRes.imageUrl : null;
+                executeTankUpdate(packPendingTankId, 'pack', { skipped: packPendingSkippedStep, imageUrl });
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'อัปโหลดภาพล้มเหลว', text: err.message, confirmButtonColor: '#ef4444' });
+            }
+        };
+
+        // ===================== DISPATCH MODAL LOGIC =====================
+        let dispatchPendingTankId = null;
+        let dispatchPendingSkippedStep = null;
+        window.dispatchFiles = []; // Array of { type:'image'|'pdf', base64, name, mimeType }
+
+        window.openDispatchModal = (tankId, skippedStep) => {
+            dispatchPendingTankId = tankId;
+            dispatchPendingSkippedStep = skippedStep;
+            document.getElementById('dispatch-modal-tank-id').innerText = tankId;
+            document.getElementById('dispatch-ref-no').value = '';
+            const warning = document.getElementById('dispatch-modal-skip-warning');
+            if (skippedStep) {
+                warning.classList.remove('hidden');
+                warning.innerHTML = `⚠️ ข้ามขั้นตอน "${skippedStep}"`;
+            } else {
+                warning.classList.add('hidden');
+            }
+            clearDispatchFiles();
+            document.getElementById('dispatch-modal').classList.remove('hidden');
+        };
+
+        window.closeDispatchModal = () => {
+            document.getElementById('dispatch-modal').classList.add('hidden');
+            clearDispatchFiles();
+            document.getElementById('manual-tank-id').value = '';
+            if (document.getElementById('view-scan').classList.contains('active')) startScanner();
+        };
+
+        window.clearDispatchFiles = () => {
+            window.dispatchFiles = [];
+            document.getElementById('dispatch-image-input').value = '';
+            document.getElementById('dispatch-pdf-input').value = '';
+            renderDispatchPreviews();
+            updateDispatchSubmitBtn();
+        };
+
+        window.handleDispatchFileAdd = (event, type) => {
+            const file = event.target.files[0];
+            if (!file) return;
+            event.target.value = '';
+
+            if (type === 'pdf') {
+                // Allow only 1 PDF, clears all images
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    window.dispatchFiles = [{ type: 'pdf', base64: e.target.result, name: file.name, mimeType: 'application/pdf' }];
+                    renderDispatchPreviews();
+                    updateDispatchSubmitBtn();
+                };
+                reader.readAsDataURL(file);
+            } else {
+                // Images: max 6, no PDF allowed when images present
+                const imageFiles = window.dispatchFiles.filter(f => f.type === 'image');
+                if (imageFiles.length >= 6) {
+                    Swal.fire({ icon: 'warning', title: 'ครบ 6 ภาพแล้ว', text: 'ไม่สามารถเพิ่มรูปภาพได้อีก', timer: 1500, showConfirmButton: false });
+                    return;
+                }
+                if (window.dispatchFiles.some(f => f.type === 'pdf')) {
+                    Swal.fire({ icon: 'warning', title: 'มี PDF อยู่แล้ว', text: 'กรุณาลบ PDF ก่อนเพิ่มรูปภาพ', confirmButtonColor: '#2563eb' });
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    window.dispatchFiles.push({ type: 'image', base64: e.target.result, name: `dispatch_${dispatchPendingTankId}_${Date.now()}.jpg`, mimeType: 'image/jpeg' });
+                    renderDispatchPreviews();
+                    updateDispatchSubmitBtn();
+                };
+                reader.readAsDataURL(file);
+            }
+        };
+
+        function renderDispatchPreviews() {
+            const container = document.getElementById('dispatch-files-preview');
+            const countEl = document.getElementById('dispatch-file-count');
+            const imageFiles = window.dispatchFiles.filter(f => f.type === 'image');
+            countEl.innerText = `${imageFiles.length} / 6`;
+
+            container.innerHTML = window.dispatchFiles.map((f, idx) => {
+                if (f.type === 'pdf') {
+                    return `<div class="relative col-span-3 bg-orange-50 border border-orange-200 rounded-xl p-3 flex items-center gap-3">
+                        <i class="fa-solid fa-file-pdf text-orange-500 text-2xl"></i>
+                        <span class="text-xs font-bold text-orange-700 truncate flex-1">${f.name}</span>
+                        <button onclick="removeDispatchFile(${idx})" class="text-red-500 hover:text-red-700 font-bold text-xs px-2 py-1 bg-red-50 rounded-lg"><i class="fa-solid fa-xmark"></i></button>
+                    </div>`;
+                } else {
+                    return `<div class="relative">
+                        <img src="${f.base64}" class="w-full h-20 object-cover rounded-xl border border-gray-200">
+                        <button onclick="removeDispatchFile(${idx})" class="absolute -top-1.5 -right-1.5 w-5 h-5 bg-red-500 text-white rounded-full text-[10px] flex items-center justify-center font-bold hover:bg-red-700"><i class="fa-solid fa-xmark"></i></button>
+                    </div>`;
+                }
+            }).join('');
+
+            // Toggle add-image/pdf buttons visibility
+            const hasPdf = window.dispatchFiles.some(f => f.type === 'pdf');
+            const hasImages = window.dispatchFiles.some(f => f.type === 'image');
+            const imgBtn = document.getElementById('dispatch-add-image-btn');
+            const pdfBtn = document.getElementById('dispatch-add-pdf-btn');
+            if (imgBtn) imgBtn.style.display = hasPdf ? 'none' : '';
+            if (pdfBtn) pdfBtn.style.display = hasImages || imageFiles.length >= 6 ? 'none' : '';
+        }
+
+        window.removeDispatchFile = (idx) => {
+            window.dispatchFiles.splice(idx, 1);
+            renderDispatchPreviews();
+            updateDispatchSubmitBtn();
+        };
+
+        window.updateDispatchSubmitBtn = () => {
+            const refNo = document.getElementById('dispatch-ref-no')?.value.trim();
+            const hasFiles = window.dispatchFiles.length > 0;
+            const btn = document.getElementById('btn-submit-dispatch');
+            if (!btn) return;
+            if (refNo && hasFiles) {
+                btn.disabled = false;
+                btn.className = 'flex-1 px-4 py-4 bg-purple-600 text-white rounded-xl font-bold shadow-md hover:bg-purple-700 transition-colors';
+                btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> ยืนยันจ่ายออก';
+            } else {
+                btn.disabled = true;
+                btn.className = 'flex-1 px-4 py-4 bg-gray-300 text-gray-500 rounded-xl font-bold transition-colors cursor-not-allowed';
+                btn.innerHTML = '<i class="fa-solid fa-lock text-xs mr-1"></i> ยืนยัน';
+            }
+        };
+
+        window.submitDispatchModal = async () => {
+            const refNo = document.getElementById('dispatch-ref-no').value.trim();
+            if (!refNo || window.dispatchFiles.length === 0) return;
+            document.getElementById('dispatch-modal').classList.add('hidden');
+            try {
+                Swal.fire({ title: 'กำลังอัปโหลดไฟล์...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+                const uploadedUrls = [];
+                for (const f of window.dispatchFiles) {
+                    const uploadRes = await saveToServer('upload_image', { base64Data: f.base64, fileName: f.name });
+                    if (uploadRes && uploadRes.imageUrl) uploadedUrls.push(uploadRes.imageUrl);
+                }
+                const imageUrl = uploadedUrls.length > 0 ? uploadedUrls.join(',') : null;
+                executeTankUpdate(dispatchPendingTankId, 'dispatch', { skipped: dispatchPendingSkippedStep, refNo, imageUrl });
+            } catch (err) {
+                Swal.fire({ icon: 'error', title: 'อัปโหลดไฟล์ล้มเหลว', text: err.message, confirmButtonColor: '#ef4444' });
             }
         };
 
@@ -1688,13 +2581,11 @@
                     }
                 });
 
-                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'tanks', tankId);
-                const snap = await getDoc(docRef);
                 const now = Date.now();
-                
-                let tankData = snap.exists() ? snap.data() : null;
+                let tankData = window.globalTanks.find(t => t.id === tankId) || null;
                 let history = tankData ? (tankData.history || []) : [];
                 let cycleCount = tankData ? (tankData.cycleCount || 0) : 0;
+                let customThresholds = tankData ? tankData.customThresholds : null;
 
                 if (actionType === 'receive' && tankData && tankData.status === 'Customer') {
                     cycleCount += 1;
@@ -1712,13 +2603,19 @@
                 }
                 history.push(historyEntry);
 
-                await setDoc(docRef, { 
-                    status: newStatus, 
-                    updatedAt: now, 
-                    note: finalNote, 
+                const updatedTank = {
+                    status: newStatus,
+                    updatedAt: now,
+                    note: finalNote,
                     history,
-                    cycleCount: cycleCount 
-                }, { merge: true });
+                    cycleCount: cycleCount
+                };
+                if (customThresholds) {
+                    updatedTank.customThresholds = customThresholds;
+                }
+
+                await saveToServer("save_tanks", { [tankId]: updatedTank });
+                await window.fetchDatabase(true);
 
                 document.getElementById('manual-tank-id').value = '';
 
@@ -1733,6 +2630,9 @@
 
         // --- Navigation ---
         window.switchTab = (id) => {
+            if (id !== 'history') {
+                window.previousTab = id;
+            }
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             document.getElementById(`view-${id}`).classList.add('active');
             
@@ -1780,6 +2680,141 @@
             if (document.getElementById('view-scan').classList.contains('active')) startScanner();
         };
 
+        window.selectedConditionImages = {
+            general: { base64: null, name: null },
+            valve: { base64: null, name: null },
+            struct: { base64: null, name: null },
+            base: { base64: null, name: null },
+            ready: { base64: null, name: null }
+        };
+
+        window.toggleConditionImageField = () => {
+            const v = document.querySelector('input[name="cond-valve"]:checked')?.value;
+            const s = document.querySelector('input[name="cond-struct"]:checked')?.value;
+            const b = document.querySelector('input[name="cond-base"]:checked')?.value;
+            const r = document.querySelector('input[name="cond-ready"]:checked')?.value;
+            
+            const isValveNotPerfect = (v !== 'ดี');
+            const isStructNotPerfect = (s !== 'ดี');
+            const isBaseNotPerfect = (b !== 'ดี');
+            const isReadyNotPerfect = (r !== 'พร้อมนำไปบรรจุ');
+            
+            const isAnyNotPerfect = (isValveNotPerfect || isStructNotPerfect || isBaseNotPerfect || isReadyNotPerfect);
+            
+            if (isAnyNotPerfect) {
+                // Hide general and clear its input
+                const genEl = document.getElementById('cond-image-general-container');
+                if (genEl) genEl.classList.add('hidden');
+                window.clearConditionImage('general');
+                
+                // Toggle specific ones
+                toggleSection('valve', isValveNotPerfect);
+                toggleSection('struct', isStructNotPerfect);
+                toggleSection('base', isBaseNotPerfect);
+                toggleSection('ready', isReadyNotPerfect);
+            } else {
+                // Show general
+                const genEl = document.getElementById('cond-image-general-container');
+                if (genEl) genEl.classList.remove('hidden');
+                
+                // Hide and clear all specific ones
+                ['valve', 'struct', 'base', 'ready'].forEach(type => {
+                    toggleSection(type, false);
+                });
+            }
+        };
+
+        function toggleSection(type, show) {
+            const el = document.getElementById(`cond-image-${type}-container`);
+            if (el) {
+                if (show) {
+                    el.classList.remove('hidden');
+                } else {
+                    el.classList.add('hidden');
+                    window.clearConditionImage(type);
+                }
+            }
+        }
+
+        window.openImageViewer = (imageUrl) => {
+            const viewerModal = document.getElementById('image-viewer-modal');
+            const viewerImg = document.getElementById('viewer-modal-img');
+            const downloadBtn = document.getElementById('btn-download-viewer-img');
+            
+            viewerImg.src = imageUrl;
+            
+            // Extract Drive ID if it's a drive URL
+            let downloadUrl = imageUrl;
+            const matchD = imageUrl.match(/\/d\/([a-zA-Z0-9_-]+)/);
+            if (matchD) {
+                const id = matchD[1];
+                downloadUrl = `https://drive.google.com/uc?export=download&id=${id}`;
+            }
+            
+            downloadBtn.href = downloadUrl;
+            downloadBtn.download = `tank_image_${Date.now()}.jpg`;
+            
+            viewerModal.classList.remove('hidden');
+        };
+
+        window.closeImageViewerModal = () => {
+            document.getElementById('image-viewer-modal').classList.add('hidden');
+        };
+
+        window.handleConditionImageSelect = (event, type) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                window.selectedConditionImages[type] = {
+                    base64: e.target.result,
+                    name: `tank_${pendingTankId}_${type}_${Date.now()}.jpg`
+                };
+                
+                document.getElementById(`cond-image-${type}-label`).innerText = file.name;
+                document.getElementById(`cond-image-${type}-preview`).src = e.target.result;
+                document.getElementById(`cond-image-${type}-preview-container`).classList.remove('hidden');
+                document.getElementById(`btn-clear-cond-image-${type}`).classList.remove('hidden');
+            };
+            reader.readAsDataURL(file);
+        };
+
+        window.clearConditionImage = (type) => {
+            if (window.selectedConditionImages) {
+                window.selectedConditionImages[type] = { base64: null, name: null };
+            }
+            
+            const fileInput = document.getElementById(`cond-image-${type}`);
+            if (fileInput) fileInput.value = '';
+            
+            const defaultLabels = {
+                general: 'เลือกรูปภาพ',
+                valve: 'เลือกรูปภาพวาล์วรั่ว',
+                struct: 'เลือกรูปภาพโครงสร้างสนิม',
+                base: 'เลือกรูปภาพฐานชำรุด',
+                ready: 'เลือกรูปภาพไม่พร้อมใช้'
+            };
+            
+            const labelEl = document.getElementById(`cond-image-${type}-label`);
+            if (labelEl) labelEl.innerText = defaultLabels[type] || 'เลือกรูปภาพ';
+            
+            const previewEl = document.getElementById(`cond-image-${type}-preview`);
+            if (previewEl) previewEl.src = '';
+            
+            const previewCont = document.getElementById(`cond-image-${type}-preview-container`);
+            if (previewCont) previewCont.classList.add('hidden');
+            
+            const clearBtn = document.getElementById(`btn-clear-cond-image-${type}`);
+            if (clearBtn) clearBtn.classList.add('hidden');
+        };
+
+        window.clearAllConditionImages = () => {
+            ['general', 'valve', 'struct', 'base', 'ready'].forEach(type => {
+                window.clearConditionImage(type);
+            });
+        };
+
         window.submitTankCondition = () => {
             const v = document.querySelector('input[name="cond-valve"]:checked').value;
             const s = document.querySelector('input[name="cond-struct"]:checked').value;
@@ -1803,9 +2838,60 @@
                 cancelButtonColor: '#9ca3af',
                 confirmButtonText: 'บันทึกข้อมูล',
                 cancelButtonText: 'ยกเลิก'
-            }).then((result) => {
+            }).then(async (result) => {
                 if (result.isConfirmed) {
-                    executeTankUpdate(pendingTankId, 'receive', { isBad: bad, note: noteStr });
+                    let uploadedUrls = [];
+                    
+                    // Find all active uploads
+                    const activeUploads = [];
+                    ['general', 'valve', 'struct', 'base', 'ready'].forEach(type => {
+                        const img = window.selectedConditionImages[type];
+                        if (img && img.base64) {
+                            activeUploads.push({ type, img });
+                        }
+                    });
+                    
+                    if (activeUploads.length > 0) {
+                        try {
+                            Swal.fire({
+                                title: 'กำลังอัปโหลดรูปภาพ...',
+                                text: 'กรุณารอสักครู่',
+                                allowOutsideClick: false,
+                                showConfirmButton: false,
+                                didOpen: () => {
+                                    Swal.showLoading();
+                                }
+                            });
+                            
+                            for (let upload of activeUploads) {
+                                const uploadRes = await saveToServer('upload_image', {
+                                    base64Data: upload.img.base64,
+                                    fileName: upload.img.name
+                                });
+                                
+                                if (uploadRes && uploadRes.imageUrl) {
+                                    uploadedUrls.push(uploadRes.imageUrl);
+                                }
+                            }
+                        } catch (err) {
+                            console.error("Images upload failed:", err);
+                            Swal.fire({
+                                icon: 'error',
+                                title: 'อัปโหลดรูปภาพล้มเหลว',
+                                text: err.message || 'เกิดข้อผิดพลาดในการอัปโหลดรูปภาพ',
+                                confirmButtonColor: '#ef4444'
+                            });
+                            return; // Stop execution
+                        }
+                    }
+
+                    const imageUrlsStr = uploadedUrls.length > 0 ? uploadedUrls.join(',') : null;
+
+                    executeTankUpdate(pendingTankId, 'receive', { 
+                        isBad: bad, 
+                        note: noteStr,
+                        imageUrl: imageUrlsStr
+                    });
                     document.getElementById('condition-modal').classList.add('hidden');
                 }
             });
@@ -1825,11 +2911,15 @@
             const tbody = document.getElementById('search-table-body');
             const emptyState = document.getElementById('search-empty-state');
             const emptyText = document.getElementById('search-empty-text');
+            const countBadge = document.getElementById('search-count-badge');
+            const paginationContainer = document.getElementById('search-pagination-container');
             
             if (!window.globalTanks || window.globalTanks.length === 0) {
                 tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 emptyText.innerText = 'ยังไม่มีข้อมูลถังในระบบ';
+                countBadge.innerText = 'จำนวนทั้งหมด: 0 ใบ';
+                paginationContainer.style.display = 'none';
                 return;
             }
 
@@ -1852,17 +2942,38 @@
                 return false;
             });
 
-            if (filtered.length === 0) {
+            const totalItems = filtered.length;
+            countBadge.innerText = `จำนวนทั้งหมด: ${totalItems} ใบ`;
+
+            if (totalItems === 0) {
                 tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 emptyText.innerText = 'ไม่พบข้อมูลตามเงื่อนไขที่ระบุ';
+                paginationContainer.style.display = 'none';
                 return;
             }
 
             emptyState.classList.add('hidden');
+            paginationContainer.style.display = 'flex';
+            
             filtered.sort((a, b) => b.updatedAt - a.updatedAt);
 
-            tbody.innerHTML = filtered.map(tank => {
+            // Pagination logic
+            const totalPages = Math.ceil(totalItems / searchPageSize) || 1;
+            if (window.searchCurrentPage > totalPages) window.searchCurrentPage = totalPages;
+            if (window.searchCurrentPage < 1) window.searchCurrentPage = 1;
+
+            document.getElementById('search-page-num').innerText = window.searchCurrentPage;
+            document.getElementById('search-page-total').innerText = totalPages;
+
+            document.getElementById('btn-search-prev').disabled = (window.searchCurrentPage === 1);
+            document.getElementById('btn-search-next').disabled = (window.searchCurrentPage === totalPages);
+
+            const startIndex = (window.searchCurrentPage - 1) * searchPageSize;
+            const endIndex = startIndex + searchPageSize;
+            const paginatedItems = filtered.slice(startIndex, endIndex);
+
+            tbody.innerHTML = paginatedItems.map(tank => {
                 const days = calculateDays(tank.updatedAt);
                 const lossReason = getExpectedLossInfo(tank.status, days, tank.customThresholds);
                 
@@ -1887,7 +2998,7 @@
                 }
 
                 return `
-                    <tr class="hover:bg-gray-50/80 transition-colors cursor-pointer" onclick="viewTankHistory('${tank.id}')">
+                    <tr class="hover:bg-gray-50/80 transition-colors">
                         <td class="p-4 font-black text-gray-800 whitespace-nowrap text-sm">
                             ${tank.id}
                             <div class="mt-1 flex flex-col items-start gap-1">
@@ -1902,7 +3013,7 @@
                             <div>${new Date(tank.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</div>
                         </td>
                         <td class="p-4 whitespace-nowrap text-center">
-                            <button class="bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors border border-gray-200 shadow-sm">
+                            <button onclick="viewTankHistory('${tank.id}')" class="bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors border border-gray-200 shadow-sm">
                                 <i class="fa-solid fa-list mr-1"></i> ดูประวัติ
                             </button>
                         </td>
@@ -1911,13 +3022,26 @@
             }).join('');
         };
 
-        // --- HISTORY MODAL LOGIC ---
+        // --- HISTORY PAGE & PAGINATION LOGIC ---
         window.viewTankHistory = (tankId) => {
+            window.currentHistoryTankId = tankId;
+            window.historyCurrentPage = 1;
+            renderHistoryView();
+            switchTab('history');
+        };
+
+        window.changeHistoryPage = (dir) => {
+            window.historyCurrentPage += dir;
+            renderHistoryView();
+        };
+
+        window.renderHistoryView = () => {
+            const tankId = window.currentHistoryTankId;
             const tank = window.globalTanks.find(t => t.id === tankId);
             if (!tank) return;
 
+            // Render Header
             const sortedHistory = (tank.history || []).slice().sort((a, b) => b.date - a.date);
-            
             const actionCounts = sortedHistory.reduce((acc, curr) => {
                 const baseAction = curr.action.split(' ')[0];
                 acc[baseAction] = (acc[baseAction] || 0) + 1;
@@ -1928,57 +3052,97 @@
                 `<span class="bg-blue-50 text-blue-700 px-2 py-1 rounded-lg text-[10px] font-bold border border-blue-100 mr-2 mb-2 inline-block">${action}: ${count}</span>`
             ).join('');
 
-            let historyHtml = '<div class="text-center py-6 text-gray-400 text-sm font-bold">ไม่มีข้อมูลประวัติ</div>';
-            if (sortedHistory.length > 0) {
-                historyHtml = sortedHistory.map((h, idx) => `
-                    <div class="flex justify-between items-start border-b border-gray-200 pb-3 mb-3 last:border-0 last:pb-0 last:mb-0 relative">
-                        ${idx === 0 ? '<div class="absolute -left-4 top-1.5 w-1.5 h-[calc(100%-12px)] bg-blue-500 rounded-full"></div><div class="pl-1">' : '<div>'}
-                            <div class="font-bold ${idx === 0 ? 'text-blue-700' : 'text-gray-700'} text-xs">
-                                ${h.action} 
-                                ${idx === 0 ? '<span class="bg-blue-100 text-blue-600 text-[8px] px-1.5 py-0.5 rounded ml-1">ล่าสุด</span>' : ''}
-                            </div>
-                            ${h.note ? `<div class="text-[10px] text-gray-500 italic mt-1 leading-snug">${h.note}</div>` : ''}
-                            ${h.refNo ? `<div class="text-[10px] text-blue-600 font-bold mt-1 leading-snug"><i class="fa-solid fa-receipt mr-1"></i>เลขที่อ้างอิง: ${h.refNo}</div>` : ''}
-                            ${h.imageUrl ? `<div class="mt-2 mb-1"><img src="${h.imageUrl}" class="w-full h-32 md:h-40 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition-opacity" onclick="window.open('${h.imageUrl}', '_blank')"></div>` : ''}
-                            <div class="text-[9px] text-gray-400 mt-1">โดย: <span class="font-bold">${h.user}</span></div>
-                        ${idx === 0 ? '</div>' : '</div>'}
-                        <div class="text-right shrink-0 ml-2">
-                            <div class="text-[10px] font-bold text-gray-600">${new Date(h.date).toLocaleDateString('th-TH', {year: '2-digit', month: 'short', day: 'numeric'})}</div>
-                            <div class="text-[9px] text-gray-400">${new Date(h.date).toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'})} น.</div>
-                        </div>
-                    </div>
-                `).join('');
-            }
-
-            const contentHtml = `
-                <div class="mb-5 border-b border-gray-100 pb-5">
-                    <span class="font-black text-gray-800 text-2xl block mb-3">${tank.id}</span>
-                    <div class="flex items-center flex-wrap gap-2 mb-3">
-                        <span class="text-xs font-bold px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 inline-block">
-                            <i class="fa-solid fa-arrows-spin mr-1"></i> ใช้งานไปแล้ว: ${tank.cycleCount || 0} รอบ
-                        </span>
-                        <span class="text-xs font-bold px-3 py-1.5 bg-gray-100 rounded-lg text-gray-600 border border-gray-200 inline-block">
-                            สถานะล่าสุด: <span class="text-blue-600">${tank.status}</span>
-                        </span>
-                    </div>
-                    <div class="flex flex-wrap mb-3">${countsHtml}</div>
+            document.getElementById('history-page-header').innerHTML = `
+                <span class="font-black text-gray-800 text-2xl block mb-3">${tank.id}</span>
+                <div class="flex items-center flex-wrap gap-2 mb-3">
+                    <span class="text-xs font-bold px-3 py-1.5 bg-purple-50 text-purple-700 rounded-lg border border-purple-200 inline-block">
+                        <i class="fa-solid fa-arrows-spin mr-1"></i> ใช้งานไปแล้ว: ${tank.cycleCount || 0} รอบ
+                    </span>
+                    <span class="text-xs font-bold px-3 py-1.5 bg-gray-100 rounded-lg text-gray-600 border border-gray-200 inline-block">
+                        สถานะล่าสุด: <span class="text-blue-600">${tank.status}</span>
+                    </span>
                 </div>
-                <div class="bg-gray-50 p-5 rounded-2xl border border-gray-100">
-                    <div class="font-bold text-gray-700 mb-4 flex justify-between items-center border-b border-gray-200 pb-3">
-                        <span class="text-xs uppercase tracking-wider"><i class="fa-solid fa-list-ul mr-1 text-gray-400"></i> ลำดับเหตุการณ์ (${sortedHistory.length})</span>
-                    </div>
-                    <div>
-                        ${historyHtml}
-                    </div>
-                </div>
+                <div class="flex flex-wrap mb-3">${countsHtml}</div>
             `;
 
-            document.getElementById('history-modal-content').innerHTML = contentHtml;
-            document.getElementById('history-modal').classList.remove('hidden');
-        };
+            document.getElementById('history-total-count').innerText = sortedHistory.length;
 
-        window.closeHistoryModal = () => {
-            document.getElementById('history-modal').classList.add('hidden');
+            // Pagination logic
+            const totalItems = sortedHistory.length;
+            const totalPages = Math.ceil(totalItems / historyPageSize) || 1;
+            if (window.historyCurrentPage > totalPages) window.historyCurrentPage = totalPages;
+            if (window.historyCurrentPage < 1) window.historyCurrentPage = 1;
+
+            document.getElementById('history-page-num').innerText = window.historyCurrentPage;
+            document.getElementById('history-page-total').innerText = totalPages;
+
+            document.getElementById('btn-history-prev').disabled = (window.historyCurrentPage === 1);
+            document.getElementById('btn-history-next').disabled = (window.historyCurrentPage === totalPages);
+
+            const paginationContainer = document.getElementById('history-pagination-container');
+            if (totalItems <= historyPageSize) {
+                paginationContainer.style.display = 'none';
+            } else {
+                paginationContainer.style.display = 'flex';
+            }
+
+            const startIndex = (window.historyCurrentPage - 1) * historyPageSize;
+            const endIndex = startIndex + historyPageSize;
+            const paginatedItems = sortedHistory.slice(startIndex, endIndex);
+
+            let historyHtml = '<div class="text-center py-6 text-gray-400 text-sm font-bold">ไม่มีข้อมูลประวัติ</div>';
+            if (paginatedItems.length > 0) {
+                historyHtml = paginatedItems.map((h, idx) => {
+                    const isFirstOnOverallList = (startIndex + idx) === 0;
+                    return `
+                        <div class="flex justify-between items-start border-b border-gray-200 pb-3 mb-3 last:border-0 last:pb-0 last:mb-0 relative">
+                            ${isFirstOnOverallList ? '<div class="absolute -left-4 top-1.5 w-1.5 h-[calc(100%-12px)] bg-blue-500 rounded-full"></div><div class="pl-1">' : '<div>'}
+                                <div class="font-bold ${isFirstOnOverallList ? 'text-blue-700' : 'text-gray-700'} text-xs">
+                                    ${h.action} 
+                                    ${isFirstOnOverallList ? '<span class="bg-blue-100 text-blue-600 text-[8px] px-1.5 py-0.5 rounded ml-1">ล่าสุด</span>' : ''}
+                                </div>
+                                ${h.note ? `<div class="text-[10px] text-gray-500 italic mt-1 leading-snug">${h.note}</div>` : ''}
+                                ${h.refNo ? `<div class="text-[10px] text-blue-600 font-bold mt-1 leading-snug"><i class="fa-solid fa-receipt mr-1"></i>เลขที่อ้างอิง: ${h.refNo}</div>` : ''}
+                                ${h.imageUrl ? h.imageUrl.split(',').map(url => {
+                                    const trimmed = url.trim();
+                                    const isPdf = trimmed.includes('drive.google.com/file/');
+                                    if (isPdf) {
+                                        // Build download URL from view URL: .../file/d/{id}/view -> uc?export=download&id={id}
+                                        const pdfIdMatch = trimmed.match(/\/d\/([a-zA-Z0-9_-]+)/);
+                                        const downloadUrl = pdfIdMatch ? `https://drive.google.com/uc?export=download&id=${pdfIdMatch[1]}` : trimmed;
+                                        return `<div class="mt-2 mb-1 w-full">
+                                            <div class="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl p-3">
+                                                <i class="fa-solid fa-file-pdf text-orange-500 text-2xl flex-shrink-0"></i>
+                                                <div class="flex-1 min-w-0">
+                                                    <div class="text-xs font-bold text-orange-800">ไฟล์ PDF แนบ</div>
+                                                </div>
+                                                <div class="flex gap-2 flex-shrink-0">
+                                                    <a href="${trimmed}" target="_blank" class="px-2.5 py-1.5 bg-orange-500 text-white rounded-lg text-[10px] font-bold hover:bg-orange-600 transition-colors flex items-center gap-1">
+                                                        <i class="fa-solid fa-eye"></i> ดู
+                                                    </a>
+                                                    <a href="${downloadUrl}" target="_blank" class="px-2.5 py-1.5 bg-blue-500 text-white rounded-lg text-[10px] font-bold hover:bg-blue-600 transition-colors flex items-center gap-1">
+                                                        <i class="fa-solid fa-download"></i> โหลด
+                                                    </a>
+                                                </div>
+                                            </div>
+                                        </div>`;
+                                    }
+                                    return `<div class="mt-2 mb-1 inline-block mr-2">
+                                        <img src="${trimmed}" class="w-24 h-24 md:w-32 md:h-32 object-cover rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:opacity-90 transition-opacity" onclick="openImageViewer('${trimmed}')">
+                                    </div>`;
+                                }).join('') : ''}
+                                <div class="text-[9px] text-gray-400 mt-1">โดย: <span class="font-bold">${h.user}</span></div>
+                            ${isFirstOnOverallList ? '</div>' : '</div>'}
+                            <div class="text-right shrink-0 ml-2">
+                                <div class="text-[10px] font-bold text-gray-600">${new Date(h.date).toLocaleDateString('th-TH', {year: '2-digit', month: 'short', day: 'numeric'})}</div>
+                                <div class="text-[9px] text-gray-400">${new Date(h.date).toLocaleTimeString('th-TH', {hour: '2-digit', minute: '2-digit'})} น.</div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+            }
+
+            document.getElementById('history-timeline-list').innerHTML = historyHtml;
         };
 
         // --- DELETE ALL HISTORY LOGIC ---
@@ -2013,13 +3177,13 @@
                     try {
                         Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'อาจใช้เวลาสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
                         
-                        // ทยอยลบข้อมูลถังออกทีละรายการใน Firestore
-                        const deletePromises = window.globalTanks.map(tank => 
-                            deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'tanks', tank.id))
-                        );
-                        await Promise.all(deletePromises);
+                        // ทยอยลบข้อมูลถังออกทีละรายการใน Google Drive JSON
+                        for (const tank of window.globalTanks) {
+                            await saveToServer("delete_tank", { tankId: tank.id });
+                        }
+                        await window.fetchDatabase(true);
 
-                        Swal.fire({ icon: 'success', title: 'ลบข้อมูลสำเร็จ!', text: 'ข้อมูลถังทั้งหมดถูกล้างออกจากระบบแล้ว', timer: 2000, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: 'ข้อมูลถังทั้งหมดถูกล้างออกจากระบบแล้ว', timer: 2000, showConfirmButton: false });
                     } catch (error) {
                         console.error(error);
                         Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลทั้งหมดได้', 'error');

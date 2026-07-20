@@ -1420,7 +1420,7 @@
             return null;
         }
 
-        function renderDashboard() {
+        window.renderDashboard = function renderDashboard() {
             const container = document.getElementById('dashboard-container');
             if (window.globalTanks.length === 0) {
                 container.innerHTML = `<div class="text-center py-16 bg-white rounded-2xl border border-gray-100 shadow-sm"><i class="fa-solid fa-folder-open text-gray-200 text-4xl mb-3"></i><p class="text-gray-400 text-sm font-bold">ยังไม่มีข้อมูลถังในระบบ</p></div>`;
@@ -1629,7 +1629,7 @@
                 }
             });
 
-            // 2. Bar Chart for Monthly Updates
+            // 2. Grouped Bar Chart: รับเข้า / บรรจุ / จ่ายออก รายเดือน
             const monthsThai = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
             
             // Generate list of past 6 months
@@ -1640,24 +1640,28 @@
                 last6Months.push({
                     month: d.getMonth(),
                     year: d.getFullYear(),
-                    label: `${monthsThai[d.getMonth()]} ${d.getFullYear() + 543}` // พ.ศ.
+                    label: `${monthsThai[d.getMonth()]} ${d.getFullYear() + 543}`
                 });
             }
 
-            // Count activity (history items) per month
-            const monthlyCounts = Array(6).fill(0);
+            // Count by action type per month
+            const receiveCounts  = Array(6).fill(0);
+            const packCounts     = Array(6).fill(0);
+            const dispatchCounts = Array(6).fill(0);
+
             filteredTanks.forEach(tank => {
                 if (tank.history && Array.isArray(tank.history)) {
                     tank.history.forEach(hist => {
-                        if (!hist.date) return;
+                        if (!hist.date || !hist.action) return;
                         const histDate = new Date(hist.date);
                         const m = histDate.getMonth();
                         const y = histDate.getFullYear();
-                        
-                        // Check if it fits in our last 6 months
                         for (let i = 0; i < 6; i++) {
                             if (last6Months[i].month === m && last6Months[i].year === y) {
-                                monthlyCounts[i]++;
+                                const act = hist.action;
+                                if (act.startsWith('รับเข้า'))        receiveCounts[i]++;
+                                else if (act.startsWith('บรรจุ'))      packCounts[i]++;
+                                else if (act.startsWith('จ่ายออก'))    dispatchCounts[i]++;
                                 break;
                             }
                         }
@@ -1670,31 +1674,52 @@
                 type: 'bar',
                 data: {
                     labels: last6Months.map(m => m.label),
-                    datasets: [{
-                        label: 'ความเคลื่อนไหว (รายการ)',
-                        data: monthlyCounts,
-                        backgroundColor: '#3b82f6', // blue-500
-                        borderRadius: 6
-                    }]
+                    datasets: [
+                        {
+                            label: 'รับเข้า',
+                            data: receiveCounts,
+                            backgroundColor: '#3b82f6',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'บรรจุ',
+                            data: packCounts,
+                            backgroundColor: '#eab308',
+                            borderRadius: 4
+                        },
+                        {
+                            label: 'จ่ายออก',
+                            data: dispatchCounts,
+                            backgroundColor: '#8b5cf6',
+                            borderRadius: 4
+                        }
+                    ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
                     plugins: {
-                        legend: { display: false }
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { family: 'Sarabun', size: 10, weight: 'bold' },
+                                boxWidth: 10,
+                                padding: 10,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        }
                     },
                     scales: {
                         y: {
                             beginAtZero: true,
-                            ticks: {
-                                precision: 0,
-                                font: { family: 'Sarabun', size: 9 }
-                            }
+                            ticks: { precision: 0, font: { family: 'Sarabun', size: 9 } },
+                            grid: { color: '#f1f5f9' }
                         },
                         x: {
-                            ticks: {
-                                font: { family: 'Sarabun', size: 9 }
-                            }
+                            ticks: { font: { family: 'Sarabun', size: 9 } },
+                            grid: { display: false }
                         }
                     }
                 }
@@ -2078,21 +2103,9 @@
 
         window.confirmDeleteTank = () => {
             const tankId = window.editingTankId;
-            // นับจำนวนไฟล์ที่จะถูกลบด้วย
-            const tankData = window.globalTanks.find(t => t.id === tankId);
-            const imageCount = tankData && tankData.history
-                ? tankData.history.reduce((count, h) => {
-                    if (h.imageUrl) count += h.imageUrl.split(',').filter(u => u.trim()).length;
-                    return count;
-                }, 0)
-                : 0;
-            const fileNote = imageCount > 0
-                ? `รวมถึงรูปภาพ/ไฟล์ที่แนบไว้ทั้งหมด ${imageCount} ไฟล์ จะถูกลบออกจาก Google Drive ด้วย`
-                : 'การกระทำนี้ไม่สามารถกู้คืนได้';
-
             Swal.fire({
                 title: 'ยืนยันการลบข้อมูล?',
-                html: `คุณต้องการลบประวัติของถัง <b>"${tankId}"</b> ออกจากระบบใช่หรือไม่?<br><span class="text-sm text-red-500">${fileNote}</span>`,
+                text: `คุณต้องการลบประวัติของถัง "${tankId}" ออกจากระบบใช่หรือไม่? (การกระทำนี้ไม่สามารถกู้คืนได้)`,
                 icon: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#ef4444',
@@ -2102,11 +2115,11 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        Swal.fire({ title: 'กำลังลบข้อมูลและไฟล์...', text: imageCount > 0 ? `กำลังลบ ${imageCount} ไฟล์จาก Google Drive` : 'กรุณารอสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-                        await saveToServer("delete_tank_with_files", { tankId: tankId });
+                        Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                        await saveToServer("delete_tank", { tankId: tankId });
                         await window.fetchDatabase(true);
                         window.closeEditTankModal();
-                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: `ข้อมูลถัง ${tankId} และไฟล์ที่เกี่ยวข้องถูกลบแล้ว`, timer: 2000, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: `ข้อมูลถัง ${tankId} ถูกลบแล้ว`, timer: 1500, showConfirmButton: false });
                     } catch (error) {
                         console.error(error);
                         Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลได้ กรุณาลองใหม่อีกครั้ง', 'error');
@@ -3187,23 +3200,15 @@
             }).then(async (result) => {
                 if (result.isConfirmed) {
                     try {
-                        // นับจำนวนไฟล์ทั้งหมดที่จะถูกลบ
-                        const totalFiles = window.globalTanks.reduce((count, tank) => {
-                            if (tank.history) {
-                                tank.history.forEach(h => {
-                                    if (h.imageUrl) count += h.imageUrl.split(',').filter(u => u.trim()).length;
-                                });
-                            }
-                            return count;
-                        }, 0);
-
-                        Swal.fire({ title: 'กำลังล้างข้อมูลและไฟล์ทั้งหมด...', text: totalFiles > 0 ? `กำลังลบ ${totalFiles} ไฟล์จาก Google Drive อาจใช้เวลาสักครู่` : 'อาจใช้เวลาสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
+                        Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'อาจใช้เวลาสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
                         
-                        // ลบทั้งหมดพร้อมไฟล์ใน Drive ด้วย action เดียว
-                        await saveToServer("delete_all_with_files", {});
+                        // ทยอยลบข้อมูลถังออกทีละรายการใน Google Drive JSON
+                        for (const tank of window.globalTanks) {
+                            await saveToServer("delete_tank", { tankId: tank.id });
+                        }
                         await window.fetchDatabase(true);
 
-                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: 'ข้อมูลถังและไฟล์ทั้งหมดถูกล้างออกจากระบบแล้ว', timer: 2000, showConfirmButton: false });
+                        Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: 'ข้อมูลถังทั้งหมดถูกล้างออกจากระบบแล้ว', timer: 2000, showConfirmButton: false });
                     } catch (error) {
                         console.error(error);
                         Swal.fire('เกิดข้อผิดพลาด', 'ไม่สามารถลบข้อมูลทั้งหมดได้', 'error');

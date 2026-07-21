@@ -1642,35 +1642,103 @@
                 }
             });
 
-            // 2. Grouped Bar Chart: รับเข้า / บรรจุ / จ่ายออก รายเดือน
+            // 2. Grouped Bar Chart: รับเข้า / บรรจุ / จ่ายออก รายเดือน (คำนวณตามตัวกรอง วันที่/เดือน/ปี)
             const monthsThai = ["ม.ค.", "ก.พ.", "มี.ค.", "เม.ย.", "พ.ค.", "มิ.ย.", "ก.ค.", "ส.ค.", "ก.ย.", "ต.ค.", "พ.ย.", "ธ.ค."];
             
-            // Generate list of past 6 months
-            const last6Months = [];
-            const today = new Date();
-            for (let i = 5; i >= 0; i--) {
-                const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
-                last6Months.push({
-                    month: d.getMonth(),
-                    year: d.getFullYear(),
-                    label: `${monthsThai[d.getMonth()]} ${d.getFullYear() + 543}`
-                });
+            let chartMonths = [];
+
+            if (filterStartVal && filterEndVal) {
+                // กรองตามช่วงวันที่กำหนด (Start - End)
+                let cur = new Date(filterStartVal);
+                cur.setDate(1);
+                cur.setHours(0,0,0,0);
+                const end = new Date(filterEndVal);
+                end.setDate(1);
+                end.setHours(23,59,59,999);
+                
+                while (cur <= end && chartMonths.length < 24) {
+                    chartMonths.push({
+                        month: cur.getMonth(),
+                        year: cur.getFullYear(),
+                        label: `${monthsThai[cur.getMonth()]} ${cur.getFullYear() + 543}`
+                    });
+                    cur.setMonth(cur.getMonth() + 1);
+                }
+            } else if (filterYearVal !== 'all') {
+                const targetYear = parseInt(filterYearVal);
+                if (filterMonthVal !== 'all') {
+                    // ระบุทั้งเดือนและปี: แสดง 6 เดือนย้อนหลังจนถึงเดือนที่เลือก
+                    const targetMonth = parseInt(filterMonthVal);
+                    for (let i = 5; i >= 0; i--) {
+                        const d = new Date(targetYear, targetMonth - i, 1);
+                        chartMonths.push({
+                            month: d.getMonth(),
+                            year: d.getFullYear(),
+                            label: `${monthsThai[d.getMonth()]} ${d.getFullYear() + 543}`
+                        });
+                    }
+                } else {
+                    // ระบุเฉพาะปี: แสดงทั้ง 12 เดือนของปีนั้น
+                    for (let m = 0; m < 12; m++) {
+                        chartMonths.push({
+                            month: m,
+                            year: targetYear,
+                            label: `${monthsThai[m]} ${targetYear + 543}`
+                        });
+                    }
+                }
+            } else if (filterMonthVal !== 'all') {
+                // ระบุเฉพาะเดือน: แสดง 6 เดือนย้อนหลังจนถึงเดือนนั้นของปีปัจจุบัน
+                const targetMonth = parseInt(filterMonthVal);
+                const targetYear = new Date().getFullYear();
+                for (let i = 5; i >= 0; i--) {
+                    const d = new Date(targetYear, targetMonth - i, 1);
+                    chartMonths.push({
+                        month: d.getMonth(),
+                        year: d.getFullYear(),
+                        label: `${monthsThai[d.getMonth()]} ${d.getFullYear() + 543}`
+                    });
+                }
+            } else {
+                // ค่าเริ่มต้น: 6 เดือนย้อนหลังจากปัจจุบัน
+                const today = new Date();
+                for (let i = 5; i >= 0; i--) {
+                    const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+                    chartMonths.push({
+                        month: d.getMonth(),
+                        year: d.getFullYear(),
+                        label: `${monthsThai[d.getMonth()]} ${d.getFullYear() + 543}`
+                    });
+                }
             }
 
-            // Count by action type per month
-            const receiveCounts  = Array(6).fill(0);
-            const packCounts     = Array(6).fill(0);
-            const dispatchCounts = Array(6).fill(0);
+            // Count by action type per month according to filters
+            const receiveCounts  = Array(chartMonths.length).fill(0);
+            const packCounts     = Array(chartMonths.length).fill(0);
+            const dispatchCounts = Array(chartMonths.length).fill(0);
 
-            filteredTanks.forEach(tank => {
+            window.globalTanks.forEach(tank => {
                 if (tank.history && Array.isArray(tank.history)) {
                     tank.history.forEach(hist => {
                         if (!hist.date || !hist.action) return;
                         const histDate = new Date(hist.date);
+
+                        if (filterStartVal) {
+                            const s = new Date(filterStartVal);
+                            s.setHours(0,0,0,0);
+                            if (histDate < s) return;
+                        }
+                        if (filterEndVal) {
+                            const e = new Date(filterEndVal);
+                            e.setHours(23,59,59,999);
+                            if (histDate > e) return;
+                        }
+                        
                         const m = histDate.getMonth();
                         const y = histDate.getFullYear();
-                        for (let i = 0; i < 6; i++) {
-                            if (last6Months[i].month === m && last6Months[i].year === y) {
+
+                        for (let i = 0; i < chartMonths.length; i++) {
+                            if (chartMonths[i].month === m && chartMonths[i].year === y) {
                                 const act = hist.action;
                                 if (act.startsWith('รับเข้า'))        receiveCounts[i]++;
                                 else if (act.startsWith('บรรจุ'))      packCounts[i]++;
@@ -1686,7 +1754,7 @@
             window.monthlyChartObj = new Chart(ctxMonthly, {
                 type: 'bar',
                 data: {
-                    labels: last6Months.map(m => m.label),
+                    labels: chartMonths.map(m => m.label),
                     datasets: [
                         {
                             label: 'รับเข้า',

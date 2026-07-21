@@ -1311,9 +1311,15 @@
             
             const dateVal = document.getElementById('label-input-date').value;
             let dateStr = "";
-            if(dateVal) {
+            if (dateVal && dateVal.includes('-')) {
                 const parts = dateVal.split('-'); // YYYY-MM-DD
-                dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                if (parts.length === 3) {
+                    dateStr = `${parts[2]}/${parts[1]}/${parts[0]}`;
+                }
+            }
+            if (!dateStr) {
+                const today = new Date();
+                dateStr = `${String(today.getDate()).padStart(2, '0')}/${String(today.getMonth() + 1).padStart(2, '0')}/${today.getFullYear()}`;
             }
 
             // Update DOM Elements for Preview
@@ -1484,6 +1490,16 @@
                 }
             });
 
+            // Destroy existing Charts before resetting container DOM to prevent memory leaks / canvas reuse errors
+            if (window.propChartObj) {
+                window.propChartObj.destroy();
+                window.propChartObj = null;
+            }
+            if (window.monthlyChartObj) {
+                window.monthlyChartObj.destroy();
+                window.monthlyChartObj = null;
+            }
+
             container.innerHTML = `
                 <div class="mb-4 bg-gradient-to-r from-blue-700 to-blue-900 rounded-2xl p-5 md:p-6 text-white shadow-md flex items-center justify-between transition-transform hover:scale-[1.01]">
                     <div class="flex items-center gap-4 md:gap-6">
@@ -1590,9 +1606,6 @@
             `;
 
             // Initialize Charts
-            if (window.propChartObj) window.propChartObj.destroy();
-            if (window.monthlyChartObj) window.monthlyChartObj.destroy();
-
             // 1. Doughnut Chart for Proportions
             const ctxProp = document.getElementById('propChart').getContext('2d');
             window.propChartObj = new Chart(ctxProp, {
@@ -2116,7 +2129,7 @@
                 if (result.isConfirmed) {
                     try {
                         Swal.fire({ title: 'กำลังลบข้อมูล...', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
-                        await saveToServer("delete_tank", { tankId: tankId });
+                        await saveToServer("delete_tank_with_files", { tankId: tankId });
                         await window.fetchDatabase(true);
                         window.closeEditTankModal();
                         Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: `ข้อมูลถัง ${tankId} ถูกลบแล้ว`, timer: 1500, showConfirmButton: false });
@@ -2485,7 +2498,7 @@
                 // Allow only 1 PDF, clears all images
                 const reader = new FileReader();
                 reader.onload = (e) => {
-                    window.dispatchFiles = [{ type: 'pdf', base64: e.target.result, name: file.name, mimeType: 'application/pdf' }];
+                    window.dispatchFiles = [{ type: 'pdf', base64: e.target.result, name: `dispatch_${dispatchPendingTankId}_${file.name}`, mimeType: 'application/pdf' }];
                     renderDispatchPreviews();
                     updateDispatchSubmitBtn();
                 };
@@ -3202,10 +3215,7 @@
                     try {
                         Swal.fire({ title: 'กำลังล้างข้อมูล...', text: 'อาจใช้เวลาสักครู่', allowOutsideClick: false, didOpen: () => { Swal.showLoading(); }});
                         
-                        // ทยอยลบข้อมูลถังออกทีละรายการใน Google Drive JSON
-                        for (const tank of window.globalTanks) {
-                            await saveToServer("delete_tank", { tankId: tank.id });
-                        }
+                        await saveToServer("delete_all_with_files", {});
                         await window.fetchDatabase(true);
 
                         Swal.fire({ icon: 'success', title: 'ลบสำเร็จ!', text: 'ข้อมูลถังทั้งหมดถูกล้างออกจากระบบแล้ว', timer: 2000, showConfirmButton: false });

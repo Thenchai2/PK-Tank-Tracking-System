@@ -615,6 +615,7 @@
                 <h3 class="text-xl font-black text-gray-800">ประเมินสภาพถัง</h3>
                 <span class="bg-blue-100 text-blue-800 text-xs font-bold px-3 py-1 rounded-lg">รับเข้า</span>
             </div>
+            <div id="receive-modal-skip-warning" class="hidden mb-4 bg-amber-50 border border-amber-200 rounded-xl p-3 text-amber-700 text-sm font-bold"></div>
             
             <p class="text-sm text-gray-500 font-bold mb-6 flex justify-between bg-gray-50 p-3 rounded-xl border border-gray-100">
                 <span>รหัสถัง:</span>
@@ -2351,28 +2352,50 @@
             
             const existingTank = window.globalTanks.find(t => t.id === tankId);
             let skippedStep = null; 
+            let isEditingStep = false;
 
             if (existingTank) {
-                let isDuplicate = false;
-                
-                if (action === 'receive' && existingTank.status === 'Ready to Use') isDuplicate = true;
-                if (action === 'pack' && existingTank.status === 'Stock') isDuplicate = true;
-                if (action === 'dispatch' && existingTank.status === 'Customer') isDuplicate = true;
-                
-                if (isDuplicate) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'ข้อมูลซ้ำซ้อน',
-                        text: `ถังรหัส ${tankId} อยู่ในกระบวนการนี้อยู่แล้ว`,
-                        confirmButtonColor: '#2563eb'
-                    }).then(() => {
-                        document.getElementById('manual-tank-id').value = '';
-                        if (document.getElementById('view-scan').classList.contains('active')) startScanner();
-                    });
-                    return;
+                const historyList = existingTank.history || [];
+                const lastEntry = historyList.length > 0 ? historyList[historyList.length - 1] : null;
+                let isDuplicateStep = false;
+
+                if (action === 'receive') {
+                    if (existingTank.status === 'Ready to Use' || (existingTank.status === 'Inactive' && lastEntry && lastEntry.action && lastEntry.action.startsWith('รับเข้า'))) {
+                        isDuplicateStep = true;
+                    }
+                } else if (action === 'pack') {
+                    if (existingTank.status === 'Stock') {
+                        isDuplicateStep = true;
+                    }
+                } else if (action === 'dispatch') {
+                    if (existingTank.status === 'Customer') {
+                        isDuplicateStep = true;
+                    }
                 }
 
-                if (existingTank.status === 'Inactive' && (action === 'pack' || action === 'dispatch')) {
+                if (isDuplicateStep) {
+                    const now = Date.now();
+                    const lastTime = lastEntry ? (lastEntry.date || existingTank.updatedAt) : existingTank.updatedAt;
+                    const timeDiff = now - (lastTime || 0);
+                    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
+
+                    if (timeDiff <= TWENTY_FOUR_HOURS) {
+                        isEditingStep = true;
+                    } else {
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'ข้อมูลซ้ำซ้อน',
+                            text: `ถังรหัส ${tankId} อยู่ในกระบวนการนี้อยู่แล้ว (เกิน 24 ชั่วโมงแล้ว ไม่สามารถแก้ไขได้)`,
+                            confirmButtonColor: '#2563eb'
+                        }).then(() => {
+                            document.getElementById('manual-tank-id').value = '';
+                            if (document.getElementById('view-scan').classList.contains('active')) startScanner();
+                        });
+                        return;
+                    }
+                }
+
+                if (existingTank.status === 'Inactive' && (action === 'pack' || action === 'dispatch') && !isEditingStep) {
                     Swal.fire({
                         icon: 'error',
                         title: 'ไม่อนุญาตให้ทำรายการ',
@@ -2385,9 +2408,11 @@
                     return; 
                 }
 
-                if (existingTank.status === 'Ready to Use' && action === 'dispatch') skippedStep = 'บรรจุ';
-                if (existingTank.status === 'Stock' && action === 'receive') skippedStep = 'จ่ายออก';
-                if (existingTank.status === 'Customer' && action === 'pack') skippedStep = 'รับเข้า';
+                if (!isEditingStep) {
+                    if (existingTank.status === 'Ready to Use' && action === 'dispatch') skippedStep = 'บรรจุ';
+                    if (existingTank.status === 'Stock' && action === 'receive') skippedStep = 'จ่ายออก';
+                    if (existingTank.status === 'Customer' && action === 'pack') skippedStep = 'รับเข้า';
+                }
 
             } else {
                 if (action === 'pack') skippedStep = 'รับเข้า';
@@ -2396,10 +2421,49 @@
 
             const openReceiveModal = () => {
                 pendingTankId = tankId;
+                window.pendingIsEditingStep = isEditingStep;
                 document.getElementById('modal-tank-id').innerText = `${tankId}`;
-                document.getElementById('cond-note').value = '';
-                document.querySelectorAll('input[type=radio][value="ดี"]').forEach(radio => radio.checked = true);
-                document.querySelectorAll('input[type=radio][value="พร้อมนำไปบรรจุ"]').forEach(radio => radio.checked = true);
+                
+                const warning = document.getElementById('receive-modal-skip-warning');
+                if (isEditingStep) {
+                    if (warning) {
+                        warning.classList.remove('hidden');
+                        warning.innerHTML = `✏️ <b>แก้ไขข้อมูลสเต็ปเดิม (รับเข้า)</b> — เป็นการบันทึกซ้ำภายใน 24 ชม.`;
+                    }
+                } else if (skippedStep) {
+                    if (warning) {
+                        warning.classList.remove('hidden');
+                        warning.innerHTML = `⚠️ ข้ามขั้นตอน "${skippedStep}"`;
+                    }
+                } else {
+                    if (warning) warning.classList.add('hidden');
+                }
+
+                // Default or pre-fill
+                let defaultValve = "ดี", defaultStruct = "ดี", defaultBase = "ดี", defaultReady = "พร้อมนำไปบรรจุ", defaultNote = "";
+                if (isEditingStep && existingTank && existingTank.history && existingTank.history.length > 0) {
+                    const lastEntry = existingTank.history[existingTank.history.length - 1];
+                    if (lastEntry && lastEntry.note) {
+                        const matchCond = lastEntry.note.match(/\[วาล์ว:(.*?), โครง:(.*?), ฐาน:(.*?), สถานะ:(.*?)\]/);
+                        if (matchCond) {
+                            defaultValve = matchCond[1];
+                            defaultStruct = matchCond[2];
+                            defaultBase = matchCond[3];
+                            defaultReady = matchCond[4];
+                        }
+                        const noteParts = lastEntry.note.split(']');
+                        if (noteParts.length > 1) {
+                            defaultNote = noteParts[noteParts.length - 1].trim();
+                        }
+                    }
+                }
+
+                document.getElementById('cond-note').value = defaultNote;
+                document.querySelectorAll('input[type=radio][name=cond-valve]').forEach(radio => radio.checked = (radio.value === defaultValve));
+                document.querySelectorAll('input[type=radio][name=cond-struct]').forEach(radio => radio.checked = (radio.value === defaultStruct));
+                document.querySelectorAll('input[type=radio][name=cond-base]').forEach(radio => radio.checked = (radio.value === defaultBase));
+                document.querySelectorAll('input[type=radio][name=cond-ready]').forEach(radio => radio.checked = (radio.value === defaultReady));
+
                 if (window.clearAllConditionImages) window.clearAllConditionImages();
                 if (window.toggleConditionImageField) window.toggleConditionImageField();
                 document.getElementById('condition-modal').classList.remove('hidden');
@@ -2434,9 +2498,9 @@
                 }
             } else {
                 if (action === 'pack') {
-                    openPackModal(tankId, skippedStep);
+                    openPackModal(tankId, skippedStep, isEditingStep);
                 } else {
-                    openDispatchModal(tankId, skippedStep);
+                    openDispatchModal(tankId, skippedStep, isEditingStep);
                 }
             }
         };
@@ -2446,18 +2510,31 @@
         let packPendingSkippedStep = null;
         window.packImageData = { base64: null, name: null };
 
-        window.openPackModal = (tankId, skippedStep) => {
+        window.openPackModal = (tankId, skippedStep, isEditingStep = false) => {
             packPendingTankId = tankId;
             packPendingSkippedStep = skippedStep;
+            window.pendingIsEditingStep = isEditingStep;
             document.getElementById('pack-modal-tank-id').innerText = tankId;
             const warning = document.getElementById('pack-modal-skip-warning');
-            if (skippedStep) {
+            if (isEditingStep) {
+                warning.classList.remove('hidden');
+                warning.innerHTML = `✏️ <b>แก้ไขข้อมูลสเต็ปเดิม (บรรจุ)</b> — เป็นการบันทึกซ้ำภายใน 24 ชม.`;
+            } else if (skippedStep) {
                 warning.classList.remove('hidden');
                 warning.innerHTML = `⚠️ ข้ามขั้นตอน "${skippedStep}"`;
             } else {
                 warning.classList.add('hidden');
             }
             clearPackImage();
+            
+            if (isEditingStep) {
+                const btn = document.getElementById('btn-submit-pack');
+                if (btn) {
+                    btn.disabled = false;
+                    btn.className = 'flex-1 px-4 py-4 bg-green-600 text-white rounded-xl font-bold shadow-md hover:bg-green-700 transition-colors';
+                    btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> ยืนยันแก้ไขบรรจุ';
+                }
+            }
             document.getElementById('pack-modal').classList.remove('hidden');
         };
 
@@ -2482,7 +2559,7 @@
                 const btn = document.getElementById('btn-submit-pack');
                 btn.disabled = false;
                 btn.className = 'flex-1 px-4 py-4 bg-green-600 text-white rounded-xl font-bold shadow-md hover:bg-green-700 transition-colors';
-                btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> ยืนยันบรรจุ';
+                btn.innerHTML = window.pendingIsEditingStep ? '<i class="fa-solid fa-check mr-1"></i> ยืนยันแก้ไขบรรจุ' : '<i class="fa-solid fa-check mr-1"></i> ยืนยันบรรจุ';
             };
             reader.readAsDataURL(file);
         };
@@ -2499,9 +2576,9 @@
             if (prevCont) prevCont.classList.add('hidden');
             const clearBtn = document.getElementById('btn-clear-pack-image');
             if (clearBtn) clearBtn.classList.add('hidden');
-            // Lock submit
+            // Lock submit if not editing
             const btn = document.getElementById('btn-submit-pack');
-            if (btn) {
+            if (btn && !window.pendingIsEditingStep) {
                 btn.disabled = true;
                 btn.className = 'flex-1 px-4 py-4 bg-gray-300 text-gray-500 rounded-xl font-bold transition-colors cursor-not-allowed';
                 btn.innerHTML = '<i class="fa-solid fa-lock text-xs mr-1"></i> ยืนยัน';
@@ -2509,12 +2586,16 @@
         };
 
         window.submitPackModal = async () => {
-            if (!window.packImageData.base64) return;
+            const isEditing = window.pendingIsEditingStep;
+            if (!window.packImageData.base64 && !isEditing) return;
             document.getElementById('pack-modal').classList.add('hidden');
             try {
-                Swal.fire({ title: 'กำลังอัปโหลดภาพ...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
-                const uploadRes = await saveToServer('upload_image', { base64Data: window.packImageData.base64, fileName: window.packImageData.name });
-                const imageUrl = (uploadRes && uploadRes.imageUrl) ? uploadRes.imageUrl : null;
+                let imageUrl = null;
+                if (window.packImageData.base64) {
+                    Swal.fire({ title: 'กำลังอัปโหลดภาพ...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+                    const uploadRes = await saveToServer('upload_image', { base64Data: window.packImageData.base64, fileName: window.packImageData.name });
+                    imageUrl = (uploadRes && uploadRes.imageUrl) ? uploadRes.imageUrl : null;
+                }
                 executeTankUpdate(packPendingTankId, 'pack', { skipped: packPendingSkippedStep, imageUrl });
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'อัปโหลดภาพล้มเหลว', text: err.message, confirmButtonColor: '#ef4444' });
@@ -2526,13 +2607,27 @@
         let dispatchPendingSkippedStep = null;
         window.dispatchFiles = []; // Array of { type:'image'|'pdf', base64, name, mimeType }
 
-        window.openDispatchModal = (tankId, skippedStep) => {
+        window.openDispatchModal = (tankId, skippedStep, isEditingStep = false) => {
             dispatchPendingTankId = tankId;
             dispatchPendingSkippedStep = skippedStep;
+            window.pendingIsEditingStep = isEditingStep;
             document.getElementById('dispatch-modal-tank-id').innerText = tankId;
-            document.getElementById('dispatch-ref-no').value = '';
+            
+            let defaultRefNo = '';
+            if (isEditingStep) {
+                const existingTank = window.globalTanks.find(t => t.id === tankId);
+                if (existingTank && existingTank.history && existingTank.history.length > 0) {
+                    const lastEntry = existingTank.history[existingTank.history.length - 1];
+                    if (lastEntry && lastEntry.refNo) defaultRefNo = lastEntry.refNo;
+                }
+            }
+            document.getElementById('dispatch-ref-no').value = defaultRefNo;
+
             const warning = document.getElementById('dispatch-modal-skip-warning');
-            if (skippedStep) {
+            if (isEditingStep) {
+                warning.classList.remove('hidden');
+                warning.innerHTML = `✏️ <b>แก้ไขข้อมูลสเต็ปเดิม (จ่ายออก)</b> — เป็นการบันทึกซ้ำภายใน 24 ชม.`;
+            } else if (skippedStep) {
                 warning.classList.remove('hidden');
                 warning.innerHTML = `⚠️ ข้ามขั้นตอน "${skippedStep}"`;
             } else {
@@ -2563,7 +2658,6 @@
             event.target.value = '';
 
             if (type === 'pdf') {
-                // Allow only 1 PDF, clears all images
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     window.dispatchFiles = [{ type: 'pdf', base64: e.target.result, name: `dispatch_${dispatchPendingTankId}_${file.name}`, mimeType: 'application/pdf' }];
@@ -2572,7 +2666,6 @@
                 };
                 reader.readAsDataURL(file);
             } else {
-                // Images: max 6, no PDF allowed when images present
                 const imageFiles = window.dispatchFiles.filter(f => f.type === 'image');
                 if (imageFiles.length >= 6) {
                     Swal.fire({ icon: 'warning', title: 'ครบ 6 ภาพแล้ว', text: 'ไม่สามารถเพิ่มรูปภาพได้อีก', timer: 1500, showConfirmButton: false });
@@ -2613,7 +2706,6 @@
                 }
             }).join('');
 
-            // Toggle add-image/pdf buttons visibility
             const hasPdf = window.dispatchFiles.some(f => f.type === 'pdf');
             const hasImages = window.dispatchFiles.some(f => f.type === 'image');
             const imgBtn = document.getElementById('dispatch-add-image-btn');
@@ -2631,12 +2723,13 @@
         window.updateDispatchSubmitBtn = () => {
             const refNo = document.getElementById('dispatch-ref-no')?.value.trim();
             const hasFiles = window.dispatchFiles.length > 0;
+            const isEditing = window.pendingIsEditingStep;
             const btn = document.getElementById('btn-submit-dispatch');
             if (!btn) return;
-            if (refNo && hasFiles) {
+            if (refNo && (hasFiles || isEditing)) {
                 btn.disabled = false;
                 btn.className = 'flex-1 px-4 py-4 bg-purple-600 text-white rounded-xl font-bold shadow-md hover:bg-purple-700 transition-colors';
-                btn.innerHTML = '<i class="fa-solid fa-check mr-1"></i> ยืนยันจ่ายออก';
+                btn.innerHTML = isEditing ? '<i class="fa-solid fa-check mr-1"></i> ยืนยันแก้ไขจ่ายออก' : '<i class="fa-solid fa-check mr-1"></i> ยืนยันจ่ายออก';
             } else {
                 btn.disabled = true;
                 btn.className = 'flex-1 px-4 py-4 bg-gray-300 text-gray-500 rounded-xl font-bold transition-colors cursor-not-allowed';
@@ -2646,16 +2739,20 @@
 
         window.submitDispatchModal = async () => {
             const refNo = document.getElementById('dispatch-ref-no').value.trim();
-            if (!refNo || window.dispatchFiles.length === 0) return;
+            const isEditing = window.pendingIsEditingStep;
+            if (!refNo || (!isEditing && window.dispatchFiles.length === 0)) return;
             document.getElementById('dispatch-modal').classList.add('hidden');
             try {
-                Swal.fire({ title: 'กำลังอัปโหลดไฟล์...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
-                const uploadedUrls = [];
-                for (const f of window.dispatchFiles) {
-                    const uploadRes = await saveToServer('upload_image', { base64Data: f.base64, fileName: f.name });
-                    if (uploadRes && uploadRes.imageUrl) uploadedUrls.push(uploadRes.imageUrl);
+                let imageUrl = null;
+                if (window.dispatchFiles.length > 0) {
+                    Swal.fire({ title: 'กำลังอัปโหลดไฟล์...', text: 'กรุณารอสักครู่', allowOutsideClick: false, showConfirmButton: false, didOpen: () => Swal.showLoading() });
+                    const uploadedUrls = [];
+                    for (const f of window.dispatchFiles) {
+                        const uploadRes = await saveToServer('upload_image', { base64Data: f.base64, fileName: f.name });
+                        if (uploadRes && uploadRes.imageUrl) uploadedUrls.push(uploadRes.imageUrl);
+                    }
+                    imageUrl = uploadedUrls.length > 0 ? uploadedUrls.join(',') : null;
                 }
-                const imageUrl = uploadedUrls.length > 0 ? uploadedUrls.join(',') : null;
                 executeTankUpdate(dispatchPendingTankId, 'dispatch', { skipped: dispatchPendingSkippedStep, refNo, imageUrl });
             } catch (err) {
                 Swal.fire({ icon: 'error', title: 'อัปโหลดไฟล์ล้มเหลว', text: err.message, confirmButtonColor: '#ef4444' });
@@ -2664,6 +2761,9 @@
 
         window.executeTankUpdate = async (tankId, actionType, conditions = null) => {
             try {
+                const isEditing = window.pendingIsEditingStep || false;
+                window.pendingIsEditingStep = false;
+
                 let newStatus = '', actionText = '', finalNote = '';
                 
                 if (actionType === 'receive') {
@@ -2678,7 +2778,7 @@
                 }
 
                 Swal.fire({
-                    title: 'กำลังบันทึกข้อมูล...',
+                    title: isEditing ? 'กำลังอัปเดตการแก้ไขข้อมูล...' : 'กำลังบันทึกข้อมูล...',
                     text: 'กรุณารอสักครู่',
                     allowOutsideClick: false,
                     showConfirmButton: false,
@@ -2693,13 +2793,23 @@
                 let cycleCount = tankData ? (tankData.cycleCount || 0) : 0;
                 let customThresholds = tankData ? tankData.customThresholds : null;
 
-                if (actionType === 'receive' && tankData && tankData.status === 'Customer') {
+                if (actionType === 'receive' && tankData && tankData.status === 'Customer' && !isEditing) {
                     cycleCount += 1;
                     let cycleText = `[จบรอบที่ ${cycleCount}]`;
                     finalNote = finalNote ? `${cycleText} ${finalNote}` : cycleText;
                 }
 
-                // แนบรูปภาพลงประวัติถ้ามี
+                if (isEditing && history.length > 0) {
+                    const lastEntry = history[history.length - 1];
+                    const prevNote = lastEntry.note || '';
+                    const cycleMatch = prevNote.match(/^(\[จบรอบที่ \d+\])/);
+                    if (cycleMatch) {
+                        if (!finalNote.startsWith(cycleMatch[1])) {
+                            finalNote = `${cycleMatch[1]} ${finalNote}`;
+                        }
+                    }
+                }
+
                 const historyEntry = { date: now, action: actionText, user: window.appUser, note: finalNote };
                 if (conditions?.imageUrl) {
                     historyEntry.imageUrl = conditions.imageUrl;
@@ -2707,13 +2817,25 @@
                 if (conditions?.refNo) {
                     historyEntry.refNo = conditions.refNo;
                 }
-                history.push(historyEntry);
+
+                if (isEditing && history.length > 0) {
+                    const lastIdx = history.length - 1;
+                    if (!historyEntry.imageUrl && history[lastIdx].imageUrl) {
+                        historyEntry.imageUrl = history[lastIdx].imageUrl;
+                    }
+                    if (!historyEntry.refNo && history[lastIdx].refNo) {
+                        historyEntry.refNo = history[lastIdx].refNo;
+                    }
+                    history[lastIdx] = historyEntry;
+                } else {
+                    history.push(historyEntry);
+                }
 
                 const updatedTank = {
                     status: newStatus,
                     updatedAt: now,
                     note: finalNote,
-                    history,
+                    history: history,
                     cycleCount: cycleCount
                 };
                 if (customThresholds) {
@@ -2725,7 +2847,10 @@
 
                 document.getElementById('manual-tank-id').value = '';
 
-                Swal.fire({ icon: 'success', title: 'บันทึกสำเร็จ!', text: `อัปเดตถัง ${tankId} เป็นสถานะ: ${newStatus}`, timer: 1500, showConfirmButton: false })
+                const successTitle = isEditing ? 'แก้ไขข้อมูลสำเร็จ!' : 'บันทึกสำเร็จ!';
+                const successMsg = isEditing ? `อัปเดตข้อมูลสเต็ปของถัง ${tankId} เป็นสถานะ: ${newStatus}` : `อัปเดตถัง ${tankId} เป็นสถานะ: ${newStatus}`;
+
+                Swal.fire({ icon: 'success', title: successTitle, text: successMsg, timer: 1500, showConfirmButton: false })
                     .then(() => { if (document.getElementById('view-scan').classList.contains('active')) startScanner(); });
 
             } catch (error) {

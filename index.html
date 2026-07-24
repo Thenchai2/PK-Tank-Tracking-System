@@ -78,9 +78,9 @@
                 <button onclick="switchTab('dashboard')" id="nav-desktop-dashboard" class="nav-btn-desktop w-full flex items-center px-4 py-3 text-blue-600 bg-blue-50 rounded-xl font-bold transition-all text-left">
                     <i class="fa-solid fa-chart-pie w-6 text-lg text-center"></i> <span class="ml-2 text-sm">แดชบอร์ด</span>
                 </button>
-                <button onclick="switchTab('stock')" id="nav-desktop-stock" class="nav-btn-desktop w-full flex items-center px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold transition-all text-left">
+                <!-- <button onclick="switchTab('stock')" id="nav-desktop-stock" class="nav-btn-desktop w-full flex items-center px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold transition-all text-left">
                     <i class="fa-solid fa-layer-group w-6 text-lg text-center"></i> <span class="ml-2 text-sm">สต็อกถัง</span>
-                </button>
+                </button> -->
                 <button onclick="switchTab('scan')" id="nav-desktop-scan" class="nav-btn-desktop w-full flex items-center px-4 py-3 text-gray-500 hover:bg-gray-50 rounded-xl font-bold transition-all text-left">
                     <i class="fa-solid fa-qrcode w-6 text-lg text-center"></i> <span class="ml-2 text-sm">สแกนถัง / บันทึก</span>
                 </button>
@@ -490,13 +490,14 @@
                             <!-- Data Table -->
                             <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
                                 <div class="overflow-x-auto">
-                                    <table class="w-full text-left border-collapse min-w-[600px]">
+                                    <table class="w-full text-left border-collapse min-w-[700px]">
                                         <thead>
                                             <tr class="bg-gray-50 border-b border-gray-200 text-xs text-gray-500 uppercase tracking-wider">
-                                                <th class="p-4 font-bold w-1/4">รหัสถัง</th>
-                                                <th class="p-4 font-bold w-1/4">สถานะปัจจุบัน</th>
-                                                <th class="p-4 font-bold w-1/4">อัปเดตล่าสุด</th>
-                                                <th class="p-4 font-bold w-1/4 text-center">ดูประวัติ</th>
+                                                <th class="p-4 font-bold w-1/5">รหัสถัง</th>
+                                                <th class="p-4 font-bold w-1/5">สถานะปัจจุบัน</th>
+                                                <th class="p-4 font-bold w-1/5">อัปเดตล่าสุด</th>
+                                                <th class="p-4 font-bold w-1/5 text-center">จำนวนวันคงค้าง</th>
+                                                <th class="p-4 font-bold w-1/5 text-center">ดูประวัติ</th>
                                             </tr>
                                         </thead>
                                         <tbody id="search-table-body" class="divide-y divide-gray-100">
@@ -567,10 +568,10 @@
                         <i class="fa-solid fa-chart-pie text-xl mb-1"></i>
                         <span class="text-[9px]">Dashboard</span>
                     </button>
-                    <button onclick="switchTab('stock')" id="nav-mobile-stock" class="nav-btn-mobile flex-1 py-3 text-center text-gray-400 font-bold flex flex-col items-center transition-colors">
+                    <!-- <button onclick="switchTab('stock')" id="nav-mobile-stock" class="nav-btn-mobile flex-1 py-3 text-center text-gray-400 font-bold flex flex-col items-center transition-colors">
                         <i class="fa-solid fa-layer-group text-xl mb-1"></i>
                         <span class="text-[9px]">สต็อกถัง</span>
-                    </button>
+                    </button> -->
                     <button onclick="switchTab('scan')" id="nav-mobile-scan" class="nav-btn-mobile flex-1 py-3 text-center text-gray-400 font-bold flex flex-col items-center transition-colors relative">
                         <div class="bg-blue-600 text-white w-12 h-12 rounded-full flex items-center justify-center absolute -top-5 shadow-lg border-4 border-[#f9fafb] transform transition-transform active:scale-95">
                             <i class="fa-solid fa-qrcode text-xl"></i>

@@ -2340,10 +2340,12 @@ const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxaauQYW6enZ6evREby
                 
                 let badgeClass = 'bg-gray-100 text-gray-600 border-gray-200';
                 let statusText = tank.status;
+                let dayColor = 'text-gray-600';
                 
                 if (lossReason || tank.status === 'Loss') {
                     badgeClass = 'bg-red-50 text-red-700 border-red-200';
                     statusText = 'คาดการณ์สูญหาย';
+                    dayColor = 'text-red-600';
                 } else if (tank.status === 'Ready to Use') {
                     badgeClass = 'bg-blue-50 text-blue-700 border-blue-200';
                     statusText = 'ถังเปล่าพร้อมใช้';
@@ -2368,10 +2370,14 @@ const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxaauQYW6enZ6evREby
                         </td>
                         <td class="p-4 whitespace-nowrap">
                             <span class="${badgeClass} border px-2.5 py-1 rounded-lg text-[10px] font-bold">${statusText}</span>
+                            ${lossReason ? `<div class="text-[9px] text-red-500 mt-1 font-semibold leading-tight"><i class="fa-solid fa-circle-exclamation mr-1"></i>${lossReason}</div>` : ''}
                         </td>
                         <td class="p-4 text-[10px] text-gray-500 whitespace-nowrap">
                             <div class="font-bold text-gray-700">${new Date(tank.updatedAt).toLocaleDateString('th-TH', { year: '2-digit', month: 'short', day: 'numeric' })}</div>
                             <div>${new Date(tank.updatedAt).toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })} น.</div>
+                        </td>
+                        <td class="p-4 text-sm font-black ${dayColor} whitespace-nowrap text-center">
+                            ${days} <span class="text-[10px] font-normal text-gray-400">วัน</span>
                         </td>
                         <td class="p-4 whitespace-nowrap text-center">
                             <button onclick="viewTankHistory('${tank.id}')" class="bg-gray-100 text-gray-600 hover:bg-blue-50 hover:text-blue-700 px-4 py-2 rounded-lg text-xs font-bold transition-colors border border-gray-200 shadow-sm">

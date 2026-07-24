@@ -675,9 +675,9 @@
                     
                     <!-- General upload (Only shown when all are good) -->
                     <div id="cond-image-general-container">
-                        <p class="text-[11px] font-bold text-gray-500 mb-2">📸 รูปถ่ายสภาพถังทั่วไป (ไม่บังคับ)</p>
+                        <p class="text-[11px] font-bold text-red-500 mb-2">📸 รูปถ่ายสภาพถังทั่วไป (บังคับ)</p>
                         <div class="flex items-center gap-3">
-                            <label for="cond-image-general" class="flex-1 border-2 border-dashed border-gray-300 rounded-xl p-3 text-center cursor-pointer hover:bg-gray-50 flex items-center justify-center gap-2 text-xs font-bold text-gray-500 hover:text-gray-700 transition-colors">
+                            <label for="cond-image-general" class="flex-1 border-2 border-dashed border-red-300 rounded-xl p-3 text-center cursor-pointer hover:bg-red-50 flex items-center justify-center gap-2 text-xs font-bold text-red-500 hover:text-red-700 transition-colors">
                                 <i class="fa-solid fa-camera"></i> <span id="cond-image-general-label">เลือกรูปภาพ</span>
                             </label>
                             <input type="file" id="cond-image-general" accept="image/*" class="hidden" onchange="handleConditionImageSelect(event, 'general')">
@@ -1472,6 +1472,7 @@
             }
 
             let counts = { ready: 0, stock: 0, customer: 0, inactive: 0, loss: 0 };
+            let lossByStatus = { ready: 0, stock: 0, customer: 0, loss: 0 };
             const totalTanks = filteredTanks.length;
 
             filteredTanks.forEach(tank => {
@@ -1480,6 +1481,15 @@
 
                 if (lossReason || tank.status === 'Loss') {
                     counts.loss++;
+                    if (tank.status === 'Loss') {
+                        lossByStatus.loss++;
+                    } else if (tank.status === 'Ready to Use') {
+                        lossByStatus.ready++;
+                    } else if (tank.status === 'Stock') {
+                        lossByStatus.stock++;
+                    } else if (tank.status === 'Customer') {
+                        lossByStatus.customer++;
+                    }
                 } else if (tank.status === 'Inactive') {
                     counts.inactive++;
                 } else if (tank.status === 'Ready to Use') {
@@ -1541,19 +1551,57 @@
                     </div>
                 </div>
 
-                <div class="mt-3 md:mt-4 bg-red-50 rounded-2xl p-5 md:p-6 border border-red-200 shadow-sm flex items-center justify-between transition-transform hover:scale-[1.01]">
-                    <div class="flex items-center gap-4 md:gap-6">
-                        <div class="bg-red-100 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-full shrink-0">
-                            <i class="fa-solid fa-triangle-exclamation text-red-500 text-2xl md:text-3xl"></i>
-                        </div>
-                        <div>
-                            <div class="text-base md:text-lg text-red-800 font-black">คาดการณ์สูญหาย</div>
-                            <div class="text-[10px] md:text-xs text-red-600 leading-snug mt-1 font-bold">
-                                ถังเปล่า > ${window.lossThresholds.ready} วัน &bull; รอขาย > ${window.lossThresholds.stock} วัน &bull; รอกลับ > ${window.lossThresholds.customer} วัน
+                <div class="mt-3 md:mt-4 bg-red-50 rounded-2xl p-5 md:p-6 border border-red-200 shadow-sm transition-transform hover:scale-[1.01]">
+                    <div class="flex items-center justify-between mb-${counts.loss > 0 ? '4' : '0'}">
+                        <div class="flex items-center gap-4 md:gap-6">
+                            <div class="bg-red-100 w-14 h-14 md:w-16 md:h-16 flex items-center justify-center rounded-full shrink-0">
+                                <i class="fa-solid fa-triangle-exclamation text-red-500 text-2xl md:text-3xl"></i>
+                            </div>
+                            <div>
+                                <div class="text-base md:text-lg text-red-800 font-black">คาดการณ์สูญหาย</div>
+                                <div class="text-[10px] md:text-xs text-red-600 leading-snug mt-1 font-bold">
+                                    ถังเปล่า > ${window.lossThresholds.ready} วัน &bull; รอขาย > ${window.lossThresholds.stock} วัน &bull; รอกลับ > ${window.lossThresholds.customer} วัน
+                                </div>
                             </div>
                         </div>
+                        <div class="text-4xl md:text-5xl font-black text-red-600">${counts.loss} <span class="text-base font-bold text-red-400">ใบ</span></div>
                     </div>
-                    <div class="text-4xl md:text-5xl font-black text-red-600">${counts.loss} <span class="text-base font-bold text-red-400">ใบ</span></div>
+                    ${counts.loss > 0 ? `
+                    <div class="border-t border-red-200 pt-3 grid grid-cols-2 sm:grid-cols-4 gap-2">
+                        ${lossByStatus.ready > 0 ? `
+                        <div class="bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-red-100 shadow-sm">
+                            <i class="fa-solid fa-industry text-blue-400 text-sm shrink-0"></i>
+                            <div>
+                                <div class="text-[10px] text-gray-500 font-bold leading-none mb-0.5">หายในโรงงาน</div>
+                                <div class="text-base font-black text-red-600">${lossByStatus.ready} <span class="text-xs font-bold text-gray-400">ใบ</span></div>
+                            </div>
+                        </div>` : ''}
+                        ${lossByStatus.stock > 0 ? `
+                        <div class="bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-red-100 shadow-sm">
+                            <i class="fa-solid fa-warehouse text-yellow-500 text-sm shrink-0"></i>
+                            <div>
+                                <div class="text-[10px] text-gray-500 font-bold leading-none mb-0.5">หายในคลังสินค้า</div>
+                                <div class="text-base font-black text-red-600">${lossByStatus.stock} <span class="text-xs font-bold text-gray-400">ใบ</span></div>
+                            </div>
+                        </div>` : ''}
+                        ${lossByStatus.customer > 0 ? `
+                        <div class="bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-red-100 shadow-sm">
+                            <i class="fa-solid fa-truck-fast text-green-500 text-sm shrink-0"></i>
+                            <div>
+                                <div class="text-[10px] text-gray-500 font-bold leading-none mb-0.5">หายระหว่างขนส่ง</div>
+                                <div class="text-base font-black text-red-600">${lossByStatus.customer} <span class="text-xs font-bold text-gray-400">ใบ</span></div>
+                            </div>
+                        </div>` : ''}
+                        ${lossByStatus.loss > 0 ? `
+                        <div class="bg-white rounded-xl px-3 py-2.5 flex items-center gap-2 border border-red-100 shadow-sm">
+                            <i class="fa-solid fa-ban text-red-400 text-sm shrink-0"></i>
+                            <div>
+                                <div class="text-[10px] text-gray-500 font-bold leading-none mb-0.5">ตั้งสูญหาย</div>
+                                <div class="text-base font-black text-red-600">${lossByStatus.loss} <span class="text-xs font-bold text-gray-400">ใบ</span></div>
+                            </div>
+                        </div>` : ''}
+                    </div>
+                    ` : ''}
                 </div>
 
                 <!-- Visuals and charts section -->
@@ -3047,13 +3095,57 @@
         };
 
         window.submitTankCondition = () => {
-            const v = document.querySelector('input[name="cond-valve"]:checked').value;
-            const s = document.querySelector('input[name="cond-struct"]:checked').value;
-            const b = document.querySelector('input[name="cond-base"]:checked').value;
-            const r = document.querySelector('input[name="cond-ready"]:checked').value;
+            const v = document.querySelector('input[name="cond-valve"]:checked')?.value;
+            const s = document.querySelector('input[name="cond-struct"]:checked')?.value;
+            const b = document.querySelector('input[name="cond-base"]:checked')?.value;
+            const r = document.querySelector('input[name="cond-ready"]:checked')?.value;
             const n = document.getElementById('cond-note').value;
+
+            // Guard: radio values must be set
+            if (!v || !s || !b || !r) {
+                Swal.fire({ icon: 'warning', title: 'ข้อมูลไม่ครบ', text: 'กรุณาเลือกสภาพถังทุกหัวข้อให้ครบ', confirmButtonColor: '#2563eb' });
+                return;
+            }
             
             const bad = (r === 'ไม่พร้อมนำไปบรรจุ');
+
+            const isValveNotPerfect = (v !== 'ดี');
+            const isStructNotPerfect = (s !== 'ดี');
+            const isBaseNotPerfect = (b !== 'ดี');
+            const isReadyNotPerfect = (r !== 'พร้อมนำไปบรรจุ');
+            const isAnyNotPerfect = (isValveNotPerfect || isStructNotPerfect || isBaseNotPerfect || isReadyNotPerfect);
+
+            const imgs = window.selectedConditionImages || {};
+
+            if (!isAnyNotPerfect) {
+                // ทุกอย่างดี → บังคับรูปทั่วไป
+                if (!imgs.general?.base64) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'กรุณาแนบรูปภาพ',
+                        text: 'กรุณาแนบรูปถ่ายสภาพถังทั่วไปก่อนบันทึกข้อมูล',
+                        confirmButtonColor: '#2563eb'
+                    });
+                    return;
+                }
+            } else {
+                // มีสภาพผิดปกติ → บังคับรูปเฉพาะส่วน
+                const missingPhotos = [];
+                if (isValveNotPerfect && !imgs.valve?.base64)  missingPhotos.push('รูปถ่ายสภาพวาล์วที่รั่วซึม');
+                if (isStructNotPerfect && !imgs.struct?.base64) missingPhotos.push('รูปถ่ายสภาพโครงสร้างที่เป็นสนิม');
+                if (isBaseNotPerfect && !imgs.base?.base64)    missingPhotos.push('รูปถ่ายสภาพฐานที่ชำรุด');
+                if (isReadyNotPerfect && !imgs.ready?.base64)  missingPhotos.push('รูปถ่ายสภาพไม่พร้อมนำไปบรรจุ');
+
+                if (missingPhotos.length > 0) {
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'กรุณาแนบรูปภาพ',
+                        html: `กรุณาแนบ:<br><b>${missingPhotos.join('<br>')}</b><br>ก่อนบันทึกข้อมูล`,
+                        confirmButtonColor: '#2563eb'
+                    });
+                    return;
+                }
+            }
             
             let noteStr = `[วาล์ว:${v}, โครง:${s}, ฐาน:${b}, สถานะ:${r}] ${n}`;
             if (window.pendingSkippedStep) {

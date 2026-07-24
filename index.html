@@ -1518,8 +1518,8 @@
                             <i class="fa-solid fa-boxes-stacked text-white text-2xl md:text-3xl"></i>
                         </div>
                         <div>
-                            <div class="text-base md:text-lg text-blue-50 font-bold">จำนวนถังในระบบ (ตามตัวกรอง)</div>
-                            <div class="text-[10px] md:text-xs text-blue-200 mt-1 font-medium">รวมทุกสถานะการใช้งานที่กรองข้อมูลแล้ว</div>
+                            <div class="text-base md:text-lg text-blue-50 font-bold">จำนวนถังในระบบ</div>
+                            <div class="text-[10px] md:text-xs text-blue-200 mt-1 font-medium">ข้อมูลมูลถังทุกสถาณะ</div>
                         </div>
                     </div>
                     <div class="text-4xl md:text-5xl font-black text-white">${totalTanks} <span class="text-base font-bold text-blue-200">ใบ</span></div>
@@ -1560,7 +1560,7 @@
                             <div>
                                 <div class="text-base md:text-lg text-red-800 font-black">คาดการณ์สูญหาย</div>
                                 <div class="text-[10px] md:text-xs text-red-600 leading-snug mt-1 font-bold">
-                                    ถังเปล่า > ${window.lossThresholds.ready} วัน &bull; รอขาย > ${window.lossThresholds.stock} วัน &bull; รอกลับ > ${window.lossThresholds.customer} วัน
+                                    ถังเปล่าไม่เคลื่อนไหวเกิน${window.lossThresholds.ready} วัน &bull; บรรจุไม่เคลื่อนไหวเกิน${window.lossThresholds.stock} วัน &bull; ส่งขายไม่รับกลับเกิน${window.lossThresholds.customer} วัน
                                 </div>
                             </div>
                         </div>

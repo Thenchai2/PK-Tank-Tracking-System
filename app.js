@@ -1460,25 +1460,16 @@ const GAS_API_URL = "https://script.google.com/macros/s/AKfycbxaauQYW6enZ6evREby
                 }
 
                 if (isDuplicateStep) {
-                    const now = Date.now();
-                    const lastTime = lastEntry ? (lastEntry.date || existingTank.updatedAt) : existingTank.updatedAt;
-                    const timeDiff = now - (lastTime || 0);
-                    const TWENTY_FOUR_HOURS = 24 * 60 * 60 * 1000;
-
-                    if (timeDiff <= TWENTY_FOUR_HOURS) {
-                        isEditingStep = true;
-                    } else {
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'ข้อมูลซ้ำซ้อน',
-                            text: `ถังรหัส ${tankId} อยู่ในกระบวนการนี้อยู่แล้ว (เกิน 24 ชั่วโมงแล้ว ไม่สามารถแก้ไขได้)`,
-                            confirmButtonColor: '#2563eb'
-                        }).then(() => {
-                            document.getElementById('manual-tank-id').value = '';
-                            if (document.getElementById('view-scan').classList.contains('active')) startScanner();
-                        });
-                        return;
-                    }
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'ข้อมูลซ้ำซ้อน',
+                        text: `ถังรหัส ${tankId} ได้ทำการบันทึกในกระบวนการนี้ไปแล้ว ไม่สามารถบันทึกซ้ำได้`,
+                        confirmButtonColor: '#2563eb'
+                    }).then(() => {
+                        document.getElementById('manual-tank-id').value = '';
+                        if (document.getElementById('view-scan').classList.contains('active')) startScanner();
+                    });
+                    return;
                 }
 
                 if (existingTank.status === 'Inactive' && (action === 'pack' || action === 'dispatch') && !isEditingStep) {
